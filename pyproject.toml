@@ -24,8 +24,12 @@ requests = "^2.28.2"
 uwsgi = "^2.0.21"
 pytz = "^2022.7.1"
 pyyaml = "^6.0"
-openai = "^0.27.2"
+openai = "^0.28.1"
 schedule = "^1.2.0"
+llm-task-handler = "^2.0.0"
+llm-discord-bot = "^2.0.1"
+discord = "^2.3.2"
+tiktoken = "^0.5.1"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "<6"

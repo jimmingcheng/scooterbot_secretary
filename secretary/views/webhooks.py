@@ -32,7 +32,7 @@ def add_todo(request: HttpRequest) -> HttpResponse:
     todo_request = json.loads(request.body.decode('utf-8'))
 
     date = todo_request.get('date')
-    date = arrow.get(date) if date else None
+    date = arrow.get(date) if date else arrow.now()
 
     todo, reminder_days_before = write.add_todo(
         todo_request['user_id'],

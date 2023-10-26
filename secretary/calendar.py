@@ -1,7 +1,6 @@
 from typing import Optional
 
 import arrow
-import boto3
 from apiclient import discovery
 from functools import lru_cache
 from pytz import timezone  # type: ignore

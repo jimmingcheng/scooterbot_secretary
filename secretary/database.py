@@ -2,6 +2,10 @@ import boto3
 from typing import Any
 
 
+class NoSuchUserError(Exception):
+    pass
+
+
 def get_user_table() -> Any:
     return boto3.resource('dynamodb', 'us-west-2').Table('scooterbot_secretary_user')
 
@@ -21,4 +25,16 @@ class UserTable:
         })
 
     def get(self, user_id: str) -> dict:
-        return self.table.get_item(Key={'user_id': user_id})['Item']
+        try:
+            return self.table.get_item(Key={'user_id': user_id})['Item']
+        except KeyError:
+            raise NoSuchUserError(user_id)
+
+    def delete(self, user_id: str) -> None:
+        self.table.delete_item(Key={'user_id': user_id})
+
+
+def remove_account(user_id: str) -> None:
+    user = UserTable().get(user_id)
+    UserTable().delete(user_id)
+    get_oauth_table().delete_item(Key={'user_id': user['google_apis_user_id']})

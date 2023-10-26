@@ -1,7 +1,6 @@
 import arrow
 import json
 import openai
-from typing import Optional
 from typing import Tuple
 
 from secretary.calendar import event_start_time
@@ -52,25 +51,21 @@ Output only the json.
     return response_speech
 
 
-def add_todo(user_id: str, description: str, date: Optional[arrow.Arrow] = None) -> Tuple[dict, int]:
+def add_todo(user_id: str, description: str, date: arrow.Arrow) -> Tuple[dict, int]:
     user = UserTable().get(user_id)
     google_apis_user_id = user['google_apis_user_id']
     calendar_id = user['todo_calendar_id']
 
-    if date:
-        text = f"{description} on {date.strftime('%b %-d, %Y')} all day"
-    else:
-        text = f"{description} all day"
-
     cal_service = get_calendar_service(google_apis_user_id)
 
-    event = cal_service.events().quickAdd(
+    event = cal_service.events().insert(
         calendarId=calendar_id,
-        text=text,
+        body={
+            'summary': description,
+            'start': {'date': date.format('YYYY-MM-DD')},
+            'end': {'date': date.format('YYYY-MM-DD')},
+        },
     ).execute()
-
-    if 'dateTime' in event['start']:
-        convert_to_all_day_event(event)
 
     reminder_days_before = auto_set_reminder(event)
 

@@ -1,45 +1,112 @@
+import html
 import json
 from django.http import HttpRequest
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
+from urllib.parse import parse_qs
 from urllib.parse import quote
 from urllib.parse import unquote
 from uuid import uuid1
 
+from secretary.calendar import get_calendar_service
+from secretary.clients import discord
 from secretary.database import UserTable
 from secretary.google_apis import get_userdb_client
 
 
-USE_GOOGLE_APIS_USER_ID = 'use_google_apis_user_id'
-
-
-def oauth(request: HttpRequest) -> HttpResponse:
-    user_id = request.GET.get('u', USE_GOOGLE_APIS_USER_ID)
+def step1(request: HttpRequest) -> HttpResponse:
+    user_id = request.GET.get('u', '')
+    discord_channel = request.GET.get('ch', '')
 
     url = get_userdb_client().get_authorization_url(
-        redirect_url='https://secretary.scooterbot.org/oauth/callback',
+        redirect_url='https://secretary.scooterbot.org/login/step2',
         access_type='offline',
-        state=user_id,
+        state=f'u={user_id}&ch={discord_channel}',
     )
     return HttpResponseRedirect(url)
 
 
-def oauth_callback(request: HttpRequest) -> HttpResponse:
+def step2(request: HttpRequest) -> HttpResponse:
     code = request.GET['code']
-    user_id = request.GET['state']
+    state = request.GET['state']
 
     google_apis_user_id = get_userdb_client().save_user_and_credentials(code)
 
-    if user_id == USE_GOOGLE_APIS_USER_ID:
-        user_id = google_apis_user_id
+    state_data = {k: v[0] for k, v in parse_qs(state).items()}
+    user_id = state_data.get('u') or google_apis_user_id
+    discord_channel = state_data.get('ch')
 
-    return HttpResponseRedirect(
-        'https://secretary.scooterbot.org/calendars'
+    url = (
+        'https://secretary.scooterbot.org/login/step3'
         f'?user_id={user_id}&google_apis_user_id={google_apis_user_id}'
     )
+    if discord_channel:
+        url += f'&discord_channel={discord_channel}'
+
+    return HttpResponseRedirect(url)
 
 
-def alexa_oauth(request: HttpRequest) -> HttpResponse:
+def step3(request: HttpRequest) -> HttpResponse:
+    user_id = request.GET['user_id']
+    google_apis_user_id = request.GET['google_apis_user_id']
+    discord_channel = request.GET.get('discord_channel', '')
+
+    form = '''
+    <form action="/login/step4" method="POST">
+      <select name="todo_calendar_id">
+        <option value="new">Create a new calendar</option>
+    '''
+
+    for cal in get_calendar_service(google_apis_user_id).calendarList().list().execute()['items']:
+        cal_id = html.escape(cal['id'])
+        summary = html.escape(cal['summary'])
+        form += f'<option value="{cal_id}">{summary}</option>'
+
+    form += f'''
+      </select>
+      <input type="text" name="new_todo_calendar_name" value="➤ To Do"/>
+      <input type="hidden" name="user_id" value="{user_id}"/>
+      <input type="hidden" name="google_apis_user_id" value="{google_apis_user_id}"/>
+      <input type="hidden" name="discord_channel" value="{discord_channel}"/>
+      <input type="submit" value="Submit"/>
+    </form>
+    '''
+
+    return HttpResponse(form)
+
+
+def step4(request: HttpRequest) -> HttpResponse:
+    user_id = request.POST['user_id']
+    google_apis_user_id = request.POST['google_apis_user_id']
+    todo_calendar_id = request.POST['todo_calendar_id']
+    new_todo_calendar_name = request.POST['new_todo_calendar_name']
+    discord_channel = request.POST['discord_channel']
+
+    cal_service = get_calendar_service(google_apis_user_id)
+
+    if todo_calendar_id == 'new':
+        cal = cal_service.calendars().insert(
+            body={
+                'summary': new_todo_calendar_name,
+            }
+        ).execute()
+        todo_calendar_id = cal['id']
+
+    UserTable().upsert(user_id, google_apis_user_id, todo_calendar_id)
+
+    cal = cal_service.calendars().get(calendarId=todo_calendar_id).execute()
+
+    if discord_channel:
+        discord.say(
+            f"You're all set <@{user_id}>. "
+            f"I'll save your todos in this calendar: {cal['summary']}",
+            channel=discord_channel
+        )
+
+    return HttpResponse(f"I'll save your todos in this calendar: {cal['summary']}")
+
+
+def alexa_step1(request: HttpRequest) -> HttpResponse:
     alexa_state = request.GET['state']
     alexa_redirect_uri = request.GET['redirect_uri']
 
@@ -47,14 +114,14 @@ def alexa_oauth(request: HttpRequest) -> HttpResponse:
 
     url = get_userdb_client().get_authorization_url(
         state=state,
-        redirect_url='https://secretary.scooterbot.org/alexa_oauth/callback',
+        redirect_url='https://secretary.scooterbot.org/login/alexa/step2',
         access_type='offline',
     )
 
     return HttpResponseRedirect(url)
 
 
-def alexa_oauth_callback(request: HttpRequest) -> HttpResponse:
+def alexa_step2(request: HttpRequest) -> HttpResponse:
     code = request.GET['code']
     state = request.GET['state']
 
