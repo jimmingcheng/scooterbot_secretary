@@ -258,5 +258,5 @@ def send_email(google_apis_user_id: str, event: dict):
                 'Data': event['summary'],
             },
         },
-        Source='secretary@scooterbot.org',
+        Source='secretary@scooterbot.ai',
     )

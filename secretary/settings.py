@@ -27,9 +27,9 @@ DEBUG = True
 
 ADMINS = [('Jimming Cheng', 'jimming@gmail.com')]
 
-ALLOWED_HOSTS = ['.scooterbot.org', 'secretary']
+ALLOWED_HOSTS = ['.scooterbot.ai', 'secretary']
 
-SERVER_EMAIL = 'secretary@scooterbot.org'
+SERVER_EMAIL = 'secretary@scooterbot.ai'
 
 # Application definition
 

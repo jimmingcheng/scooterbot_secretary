@@ -19,7 +19,7 @@ def step1(request: HttpRequest) -> HttpResponse:
     discord_channel = request.GET.get('ch', '')
 
     url = get_userdb_client().get_authorization_url(
-        redirect_url='https://secretary.scooterbot.org/login/step2',
+        redirect_url='https://secretary.scooterbot.ai/login/step2',
         access_type='offline',
         state=f'u={user_id}&ch={discord_channel}',
     )
@@ -37,7 +37,7 @@ def step2(request: HttpRequest) -> HttpResponse:
     discord_channel = state_data.get('ch')
 
     url = (
-        'https://secretary.scooterbot.org/login/step3'
+        'https://secretary.scooterbot.ai/login/step3'
         f'?user_id={user_id}&google_apis_user_id={google_apis_user_id}'
     )
     if discord_channel:
@@ -114,7 +114,7 @@ def alexa_step1(request: HttpRequest) -> HttpResponse:
 
     url = get_userdb_client().get_authorization_url(
         state=state,
-        redirect_url='https://secretary.scooterbot.org/login/alexa/step2',
+        redirect_url='https://secretary.scooterbot.ai/login/alexa/step2',
         access_type='offline',
     )
 

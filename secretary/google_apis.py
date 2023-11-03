@@ -10,7 +10,7 @@ from secretary.database import get_oauth_table
 
 AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 TOKEN_URL = 'https://oauth2.googleapis.com/token'
-REDIRECT_URL = 'https://secretary.scooterbot.org/oauth/callback'
+REDIRECT_URL = 'https://secretary.scooterbot.ai/oauth/callback'
 
 
 def get_client_id() -> str:
