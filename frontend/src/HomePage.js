@@ -7,6 +7,10 @@ secretary: Hi! I'm your personal secretary. To get started, link your Google acc
 `;
 
 const chat2 = `
+secretary: Your Google account is connected. I'm ready to assist you.
+`;
+
+const chat3 = `
 you: schedule dinner at Burger King next Thurs 7 pm
 
 secretary: Added to your calendar:
@@ -15,7 +19,7 @@ secretary: Added to your calendar:
 | Location: Burger King
 `;
 
-const chat3 = `
+const chat4 = `
 you: remove my account
 
 secretary: Can you confirm you want to disconnect your account now?
@@ -33,8 +37,10 @@ function HomePage() {
           <li><Link to="/signup">Sign Up</Link></li>
         </ul>
       </nav>
-      <h1>Welcome to ScooterbotAI</h1>
-      <p>Recruit our AI-powered <a href="https://discord.com/">Discord</a> bot to be your personal secretary. ScooterbotAI can help you schedule events in your Google calendar, and guide you through your day's appointment using natural language.</p>
+      <h1>Welcome to Scooterbot AI</h1>
+      <p>Recruit our AI-powered <a href="https://discord.com/">Discord</a> bot to be your personal secretary. Scooterbot AI can help you schedule events in your Google calendar, and guide you through your day's appointments using natural language.</p>
+
+      <p>Scooterbot AI will only use your Google account to fulfill your explicit requests. We will not retain your data or use it for other purposes.</p>
 
       <h2>Getting Started</h2>
 
@@ -44,14 +50,17 @@ function HomePage() {
           Log into your Discord server and ask the Secretary bot to connect your Google account:
           <pre>{chat1}</pre>
         </li>
-        <li>Click the link and connect your Google account using your web browser.</li>
         <li>
-          Start chatting with the Secretary bot!
+          Click the link and connect your Google account using your web browser.
           <pre>{chat2}</pre>
         </li>
         <li>
-          You can always disconnect your Google account by asking the Secretary bot:
+          Start chatting with the Secretary bot!
           <pre>{chat3}</pre>
+        </li>
+        <li>
+          You can always disconnect your Google account by asking the Secretary bot:
+          <pre>{chat4}</pre>
         </li>
       </ol>
     </>

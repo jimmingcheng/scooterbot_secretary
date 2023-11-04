@@ -8,7 +8,7 @@ function App() {
   return (
     <Router>
       <header>
-        Scooterbot AI
+        <Link to="/">Scooterbot AI</Link>
         <hr/>
       </header>
       <Routes>
