@@ -15,6 +15,16 @@ secretary: Added to your calendar:
 | Location: Burger King
 `;
 
+const chat3 = `
+you: remove my account
+
+secretary: Can you confirm you want to disconnect your account now?
+
+you: yes
+
+secretary: Thank you. Your account has been disconnected. I can no longer access your Google calendar or data.
+`;
+
 function HomePage() {
   return (
     <>
@@ -38,6 +48,10 @@ function HomePage() {
         <li>
           Start chatting with the Secretary bot!
           <pre>{chat2}</pre>
+        </li>
+        <li>
+          You can always disconnect your Google account by asking the Secretary bot:
+          <pre>{chat3}</pre>
         </li>
       </ol>
     </>
