@@ -7,11 +7,10 @@ import TermsOfService from './TermsOfService';
 function App() {
   return (
     <Router>
-      <nav>
-        <ul>
-          <li><Link to="/signup">Sign Up</Link></li>
-        </ul>
-      </nav>
+      <header>
+        Scooterbot AI
+        <hr/>
+      </header>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<SignUp />} />

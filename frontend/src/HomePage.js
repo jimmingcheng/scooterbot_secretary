@@ -18,6 +18,11 @@ secretary: Added to your calendar:
 function HomePage() {
   return (
     <>
+      <nav>
+        <ul>
+          <li><Link to="/signup">Sign Up</Link></li>
+        </ul>
+      </nav>
       <h1>Welcome to ScooterbotAI</h1>
       <p>Recruit our AI-powered <a href="https://discord.com/">Discord</a> bot to be your personal secretary. ScooterbotAI can help you schedule events in your Google calendar, and guide you through your day's appointment using natural language.</p>
 
