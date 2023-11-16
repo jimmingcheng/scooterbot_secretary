@@ -12,6 +12,7 @@ from secretary.database import NoSuchUserError
 from secretary.database import UserTable
 from secretary.tasks.account import DisconnectAccount
 from secretary.tasks.calendar import AddCalendarEvent
+from secretary.tasks.question import AnswerQuestionFromCalendar
 from secretary.tasks.todo import AddTodo
 
 
@@ -25,6 +26,7 @@ class SecretaryDiscordBot(LLMDiscordBot):
 
     def conversation_task_dispatcher(self, user_id: str) -> TaskDispatcher:
         return TaskDispatcher([
+            AnswerQuestionFromCalendar(user_id=user_id),
             AddCalendarEvent(user_id=user_id),
             AddTodo(user_id=user_id),
             DisconnectAccount(user_id=user_id),

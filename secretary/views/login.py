@@ -1,5 +1,6 @@
 import html
 import json
+from django.http import JsonResponse
 from django.http import HttpRequest
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
@@ -14,19 +15,19 @@ from secretary.database import UserTable
 from secretary.google_apis import get_userdb_client
 
 
-def step1(request: HttpRequest) -> HttpResponse:
+def step2(request: HttpRequest) -> HttpResponse:
     user_id = request.GET.get('u', '')
     discord_channel = request.GET.get('ch', '')
 
     url = get_userdb_client().get_authorization_url(
-        redirect_url='https://secretary.scooterbot.ai/login/step2',
+        redirect_url='https://secretary.scooterbot.ai/login/step3',
         access_type='offline',
         state=f'u={user_id}&ch={discord_channel}',
     )
     return HttpResponseRedirect(url)
 
 
-def step2(request: HttpRequest) -> HttpResponse:
+def step3(request: HttpRequest) -> HttpResponse:
     code = request.GET['code']
     state = request.GET['state']
 
@@ -37,7 +38,7 @@ def step2(request: HttpRequest) -> HttpResponse:
     discord_channel = state_data.get('ch')
 
     url = (
-        'https://secretary.scooterbot.ai/login/step3'
+        'https://secretary.scooterbot.ai/login/step4'
         f'?user_id={user_id}&google_apis_user_id={google_apis_user_id}'
     )
     if discord_channel:
@@ -46,40 +47,24 @@ def step2(request: HttpRequest) -> HttpResponse:
     return HttpResponseRedirect(url)
 
 
-def step3(request: HttpRequest) -> HttpResponse:
-    user_id = request.GET['user_id']
+def step4_calendar_list(request: HttpRequest) -> JsonResponse:
     google_apis_user_id = request.GET['google_apis_user_id']
-    discord_channel = request.GET.get('discord_channel', '')
-
-    form = '''
-    <form action="/login/step4" method="POST">
-      <select name="todo_calendar_id">
-        <option value="new">Create a new calendar</option>
-    '''
-
-    for cal in get_calendar_service(google_apis_user_id).calendarList().list().execute()['items']:
-        cal_id = html.escape(cal['id'])
-        summary = html.escape(cal['summary'])
-        form += f'<option value="{cal_id}">{summary}</option>'
-
-    form += f'''
-      </select>
-      <input type="text" name="new_todo_calendar_name" value="➤ To Do"/>
-      <input type="hidden" name="user_id" value="{user_id}"/>
-      <input type="hidden" name="google_apis_user_id" value="{google_apis_user_id}"/>
-      <input type="hidden" name="discord_channel" value="{discord_channel}"/>
-      <input type="submit" value="Submit"/>
-    </form>
-    '''
-
-    return HttpResponse(form)
+    calendars = get_calendar_service(google_apis_user_id).calendarList().list().execute()['items']
+    return JsonResponse({
+        'calendars': [
+            {
+                'id': html.escape(cal['id']),
+                'summary': html.escape(cal['summary']),
+            }
+            for cal in calendars
+        ]
+    })
 
 
-def step4(request: HttpRequest) -> HttpResponse:
+def step5(request: HttpRequest) -> HttpResponse:
     user_id = request.POST['user_id']
     google_apis_user_id = request.POST['google_apis_user_id']
     todo_calendar_id = request.POST['todo_calendar_id']
-    new_todo_calendar_name = request.POST['new_todo_calendar_name']
     discord_channel = request.POST['discord_channel']
 
     cal_service = get_calendar_service(google_apis_user_id)
@@ -87,7 +72,7 @@ def step4(request: HttpRequest) -> HttpResponse:
     if todo_calendar_id == 'new':
         cal = cal_service.calendars().insert(
             body={
-                'summary': new_todo_calendar_name,
+                'summary': '➤ To Do',
             }
         ).execute()
         todo_calendar_id = cal['id']

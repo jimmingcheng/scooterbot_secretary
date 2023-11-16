@@ -3,6 +3,8 @@ import HomePage from './HomePage';
 import SignUp from './SignUp';
 import PrivacyPolicy from './PrivacyPolicy';
 import TermsOfService from './TermsOfService';
+import Login from './Login';
+import LoginStep4 from './LoginStep4';
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/tos" element={<TermsOfService />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/login/step4" element={<LoginStep4 />} />
       </Routes>
       <footer>
         <hr />
