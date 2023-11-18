@@ -10,15 +10,19 @@ function PrivacyPolicy() {
 
       <h2>Type and Collection of Data</h2>
       <p>In order to provide useful services as your Secretary, we'll access some of your private data such as:</p>
-
       <ul>
         <li>The natural language requests you submit directly to Scooterbot AI by mentioning <code>@secretary</code> in your Discord messages</li>
         <li>Your Google Calendar events and schedules</li>
       </ul>
 
       <h2>Use of Data</h2>
-      <p>The data we collect is solely used for fulfilling tasks on your calendar such as reading your schedule and creating events. We strive to enhance your experience by interpreting your natural language requests through a third-party AI, ChatGPT, owned by OpenAI.</p>
-
+      <p>The data we collect is solely used for fulfilling tasks on your calendar such as reading your schedule and creating events. This includes:</p>
+      <ul>
+        <li>When you mention <code>@secretary</code> in a Discord message, we'll send the message text to ChatGPT, a 3rd party AI owned by OpenAI.</li>
+        <li>After OpenAI interprets your message, we'll use the interpreted instructions to read or write to your Google Calendar on your behalf.</li>
+        <li>In some cases, the specific Google Calendar data you request will be sent back to ChatGPT for further interpretation.</li>
+      </ul>
+    
       <h2>Disclosure of Data</h2>
       <p>We may send your data to a third-party AI (OpenAI) for interpreting natural language requests. OpenAI may retain your data for up to 30 days to identify abuse, but will not otherwise retain your data or use it for any other purpose than to provide responses to your requests. Besides this, your data remains confidential and won't be sold, distributed, leased, or disclosed to other third parties unless we have your permission or are required by law to do so.</p>
 
