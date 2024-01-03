@@ -37,7 +37,7 @@ function Login() {
         <h3>Disclosure of Data</h3>
         <p>We may send your data to a third-party AI (OpenAI) for interpreting natural language requests. OpenAI may retain your data for up to 30 days to identify abuse, but will not otherwise retain your data or use it for any other purpose than to provide responses to your requests. Besides this, your data remains confidential and won't be sold, distributed, leased, or disclosed to other third parties unless we have your permission or are required by law to do so.</p>
 
-        <p>By clicking "Sign in with Google", you agree to the above terms, as well as our <a href="/privacy">Privacy Policy</a> and <a href="/tos">Terms of Service</a></p>
+        <p>By clicking "Connect Google Calendar", you agree to the above terms, as well as our <a href="/privacy">Privacy Policy</a> and <a href="/tos">Terms of Service</a></p>
       </div>
 
       <form action="/login/step2" method="GET">
