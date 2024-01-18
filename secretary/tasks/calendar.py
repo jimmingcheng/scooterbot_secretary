@@ -1,33 +1,14 @@
-from typing import Any
-from typing import Dict
 from typing import Optional
 
+import arrow
 from abc import ABC
 from abc import abstractmethod
-import aiohttp
-import arrow
-import staticconf
-from dataclasses import dataclass
 from llm_task_handler.handler import OpenAIFunctionTaskHandler
 from llm_task_handler.handler import ProgressMessageFunc
 from llm_task_handler.handler import TaskState
 
-from secretary.calendar import get_calendar_service
-from secretary.database import UserTable
-
-
-def google_apis_api_key() -> str:
-    return staticconf.read('google_apis.api_key', namespace='secretary')  # type: ignore
-
-
-@dataclass
-class AddCalendarEventArgs:
-    title: str
-    start_time: arrow.Arrow
-    end_time: arrow.Arrow
-    is_all_day: bool
-    location: Optional[str]
-    confirmation_message: str
+from secretary import celery_tasks
+from secretary.celery_tasks import AddCalendarEventArgs
 
 
 class AddCalendarEventBase(OpenAIFunctionTaskHandler, ABC):
@@ -78,54 +59,20 @@ class AddCalendarEventBase(OpenAIFunctionTaskHandler, ABC):
         cur_state: TaskState,
         progress_message_func: Optional[ProgressMessageFunc] = None,
     ) -> TaskState:
-        args = cur_state.custom_state
-
         if cur_state.state_id == self.INTENT_SELECTION_STATE_ID:
             return TaskState(
                 handler=self,
                 user_prompt=cur_state.user_prompt,
-                custom_state=AddCalendarEventArgs(
-                    title=args['title'],
-                    start_time=arrow.get(args['start_time']),
-                    end_time=arrow.get(args['end_time']),
-                    is_all_day=args['is_all_day'],
-                    location=args.get('location'),
-                    confirmation_message=args['confirmation_message'],
-                )
+                custom_state=cur_state.custom_state,
             )
 
         else:
-
-            event: Dict[str, Any] = {
-                'summary': args.title
-            }
-
-            if args.location:
-                async with aiohttp.ClientSession() as session:
-                    url = f'https://maps.googleapis.com/maps/api/place/textsearch/json?key={google_apis_api_key()}&query={args.location}'
-
-                    async with session.get(url) as resp:
-                        resp_data = await resp.json()
-                        place = resp_data['results'][0] if resp_data.get('results') else None
-
-                        if place:
-                            event['location'] = place['formatted_address']
-
-            if args.is_all_day:
-                event['start'] = {'date': args.start_time.format('YYYY-MM-DD')}
-                event['end'] = {'date': args.end_time.format('YYYY-MM-DD')}
-            else:
-                event['start'] = {'dateTime': args.start_time.format('YYYY-MM-DDTHH:mm:ssZZ')}
-                event['end'] = {'dateTime': args.end_time.format('YYYY-MM-DDTHH:mm:ssZZ')}
-
-            # aiogoogle doesn't work for some reason
-            user = UserTable().get(self.user_id)
-            get_calendar_service(user['google_apis_user_id']).events().insert(calendarId='primary', body=event).execute()
+            celery_tasks.add_calendar_event.delay(self.user_id, cur_state.custom_state)
 
             return TaskState(
                 handler=self,
                 user_prompt=cur_state.user_prompt,
-                reply=args.confirmation_message,
+                reply=cur_state.custom_state['confirmation_message'],
                 is_done=True,
             )
 
