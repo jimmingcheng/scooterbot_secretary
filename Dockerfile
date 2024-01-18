@@ -37,6 +37,7 @@ CMD [ \
   "/app/venv/bin/uwsgi", \
   "--socket", "0.0.0.0:8080", \
   "--http", "0.0.0.0:58080", \
+  "--buffer-size", "8192", \
   "-p", "25", \
   "-w", "secretary.wsgi" \
 ]

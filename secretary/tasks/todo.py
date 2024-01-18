@@ -1,6 +1,8 @@
 from typing import Optional
 
 import arrow
+from abc import ABC
+from abc import abstractmethod
 from llm_task_handler.handler import OpenAIFunctionTaskHandler
 from llm_task_handler.handler import ProgressMessageFunc
 from llm_task_handler.handler import TaskState
@@ -8,9 +10,13 @@ from llm_task_handler.handler import TaskState
 from secretary.write import add_todo
 
 
-class AddTodo(OpenAIFunctionTaskHandler):
+class AddTodoBase(OpenAIFunctionTaskHandler, ABC):
     def task_type(self) -> str:
         return 'add_todo_reminder_or_task'
+
+    @abstractmethod
+    def formatted_reply(self, task_name: str, due_date: arrow.Arrow) -> str:
+        pass
 
     def intent_selection_function(self) -> dict:
         return {
@@ -42,11 +48,7 @@ class AddTodo(OpenAIFunctionTaskHandler):
 
         add_todo(self.user_id, cs['task_name'], due_date)
 
-        reply = f'''
-Here's your todo:
->>> **{cs['task_name']}**
-{due_date.format('dddd, MMMM D, YYYY')}
-'''
+        reply = self.formatted_reply(cs['task_name'], due_date)
 
         return TaskState(
             handler=self,
@@ -54,3 +56,20 @@ Here's your todo:
             reply=reply,
             is_done=True,
         )
+
+
+class AddTodoFromAlexa(AddTodoBase):
+    def formatted_reply(self, task_name: str, due_date: arrow.Arrow) -> str:
+        return f'''
+I'll remind you to {task_name} on {due_date.format('dddd')},
+<say-as interpret-as="date">{due_date.format('YYYY-MM-DD')}</say-as>.
+'''
+
+
+class AddTodoFromDiscord(AddTodoBase):
+    def formatted_reply(self, task_name: str, due_date: arrow.Arrow) -> str:
+        return f'''
+Here's your todo:
+>>> **{task_name}**
+{due_date.format('dddd, MMMM D, YYYY')}
+'''

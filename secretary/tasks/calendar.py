@@ -2,6 +2,8 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 
+from abc import ABC
+from abc import abstractmethod
 import aiohttp
 import arrow
 import staticconf
@@ -28,9 +30,13 @@ class AddCalendarEventArgs:
     confirmation_message: str
 
 
-class AddCalendarEvent(OpenAIFunctionTaskHandler):
+class AddCalendarEventBase(OpenAIFunctionTaskHandler, ABC):
     def task_type(self) -> str:
         return 'add_calendar_event'
+
+    @abstractmethod
+    def confirmation_message_description(self) -> str:
+        pass
 
     def intent_selection_function(self) -> dict:
         return {
@@ -60,15 +66,7 @@ class AddCalendarEvent(OpenAIFunctionTaskHandler):
                     },
                     'confirmation_message': {
                         'type': 'string',
-                        'description': """
-Human-readable confirmation of the fields that the event has been added with. e.g.:
-
-Added to your calendar:
-
->>> Title: **Doctor's appointment**
-Date/Time: **October 5, 2023, 4-6:30pm**
-Location: **123 Main St, San Francisco, CA 94105**
-                        """,
+                        'description': self.confirmation_message_description(),
                     },
                 },
                 'required': ['title', 'start_time', 'end_time', 'is_all_day', 'confirmation_message'],
@@ -130,3 +128,25 @@ Location: **123 Main St, San Francisco, CA 94105**
                 reply=args.confirmation_message,
                 is_done=True,
             )
+
+
+class AddCalendarEventFromAlexa(AddCalendarEventBase):
+    def confirmation_message_description(self) -> str:
+        return """
+Speech to be read to the user via Alexa. e.g.:
+
+I've added your doctor's appointment to your calendar on October 5 from 4 to 6:30pm at 123 Main Street in San Francisco.
+        """
+
+
+class AddCalendarEventFromDiscord(AddCalendarEventBase):
+    def confirmation_message_description(self) -> str:
+        return """
+Human-readable confirmation of the fields that the event has been added with. e.g.:
+
+Added to your calendar:
+
+>>> Title: **Doctor's appointment**
+Date/Time: **October 5, 2023, 4-6:30pm**
+Location: **123 Main St, San Francisco, CA 94105**
+        """
