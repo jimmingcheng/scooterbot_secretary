@@ -25,11 +25,12 @@ class SecretaryDiscordBot(LLMDiscordBot):
         ])
 
     def conversation_task_dispatcher(self, user_id: str) -> TaskDispatcher:
+        sb_user_id = ChannelTable().look_up_user_id('discord', user_id)
         return TaskDispatcher([
-            AnswerQuestionFromCalendar(user_id=user_id),
-            AddCalendarEventFromDiscord(user_id=user_id),
-            AddTodoFromDiscord(user_id=user_id),
-            DisconnectAccount(user_id=user_id),
+            AnswerQuestionFromCalendar(user_id=sb_user_id),
+            AddCalendarEventFromDiscord(user_id=sb_user_id),
+            AddTodoFromDiscord(user_id=sb_user_id),
+            DisconnectAccount(user_id=sb_user_id),
         ])
 
     def monitored_channels(self) -> list[int]:
@@ -38,7 +39,7 @@ class SecretaryDiscordBot(LLMDiscordBot):
     async def reply(self, message: Message) -> Optional[str]:
         try:
             user_id = str(message.author.id)
-            ChannelTable().get(channel_user_id=user_id)
+            ChannelTable().get('discord', user_id)
         except NoSuchUserError:
             return self.signup_message(message)
 

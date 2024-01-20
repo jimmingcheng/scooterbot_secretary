@@ -15,6 +15,7 @@ from ask_sdk_core.utils import is_intent_name
 from ask_sdk_core.utils import is_request_type
 from llm_task_handler.dispatch import TaskDispatcher
 
+from secretary.database import ChannelTable
 from secretary.tasks.calendar import AddCalendarEventFromAlexa
 from secretary.tasks.question import AnswerQuestionFromCalendar
 from secretary.tasks.todo import AddTodoFromAlexa
@@ -25,10 +26,11 @@ class IssuePromptHandler(AbstractRequestHandler):
         return is_intent_name('IssuePrompt')(handler_input)
 
     def handle(self, handler_input: HandlerInput) -> Response:
-        user_id = str(handler_input.request_envelope.context.system.user.access_token)  # type: ignore
+        access_token = str(handler_input.request_envelope.context.system.user.access_token)  # type: ignore
         intent = handler_input.request_envelope.request.intent  # type: ignore
         user_prompt = intent.slots['Prompt'].value  # type: ignore
 
+        user_id = ChannelTable().look_up_user_id('alexa', access_token)
         speech = asyncio.run(
             TaskDispatcher([
                 AnswerQuestionFromCalendar(user_id=user_id),

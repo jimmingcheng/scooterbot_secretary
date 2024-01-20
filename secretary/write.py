@@ -53,11 +53,10 @@ Output only the json.
 
 
 def add_todo(user_id: str, description: str, date: arrow.Arrow) -> Tuple[dict, int]:
-    google_apis_user_id = ChannelTable().look_up_user_id(user_id)
-    user = UserTable().get(google_apis_user_id)
+    user = UserTable().get(user_id)
     calendar_id = user['todo_calendar_id']
 
-    cal_service = get_calendar_service(google_apis_user_id)
+    cal_service = get_calendar_service(user_id)
 
     event = cal_service.events().insert(
         calendarId=calendar_id,
@@ -77,7 +76,7 @@ def add_todo(user_id: str, description: str, date: arrow.Arrow) -> Tuple[dict, i
     ).execute()
 
     if should_remind_today(event, []):
-        send_email(google_apis_user_id, event)
+        send_email(user_id, event)
 
     return event, reminder_days_before
 

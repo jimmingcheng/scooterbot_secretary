@@ -180,12 +180,12 @@ EMAIL_TEMPLATE = '''
 
 
 @lru_cache(maxsize=1)
-def get_gmail_service(google_apis_user_id: str):
-    return discovery.build('gmail', 'v1', credentials=get_google_apis_creds(google_apis_user_id))
+def get_gmail_service(user_id: str):
+    return discovery.build('gmail', 'v1', credentials=get_google_apis_creds(user_id))
 
 
-def get_todos_to_remind_today(todo_calendar_id: str, google_apis_user_id: str) -> List[dict]:
-    resp = get_calendar_service(google_apis_user_id).events().list(
+def get_todos_to_remind_today(todo_calendar_id: str, user_id: str) -> List[dict]:
+    resp = get_calendar_service(user_id).events().list(
         calendarId=todo_calendar_id,
         timeMin=arrow.now().shift(days=-1).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         singleEvents=True,
@@ -219,14 +219,14 @@ def should_remind_today(event: dict, default_reminder_cfgs: List[dict]) -> bool:
     return reminder_time.toordinal() == arrow.now(TZ).toordinal()
 
 
-def get_formatted_email(google_apis_user_id: str) -> str:
-    id_token = get_oauth_table().get_item(Key={'user_id': google_apis_user_id})['Item']['id_token']
+def get_formatted_email(user_id: str) -> str:
+    id_token = get_oauth_table().get_item(Key={'user_id': user_id})['Item']['id_token']
     profile = jwt.decode(id_token, options={'verify_signature': False})
     return f"Jimming Cheng <{profile['email']}>"
 
 
-def send_email(google_apis_user_id: str, event: dict):
-    formatted_email = get_formatted_email(google_apis_user_id)
+def send_email(user_id: str, event: dict):
+    formatted_email = get_formatted_email(user_id)
 
     html_body = EMAIL_TEMPLATE.replace(
         'PREHEADER', 'Due {}'.format(event_start_time(event).format('MMM D'))

@@ -82,8 +82,7 @@ async def _add_calendar_event(user_id: str, args: AddCalendarEventArgs) -> None:
         event['end'] = {'dateTime': end_time.format('YYYY-MM-DDTHH:mm:ssZZ')}
 
     # aiogoogle doesn't work for some reason
-    google_apis_user_id = ChannelTable().look_up_user_id(user_id)
-    get_calendar_service(google_apis_user_id).events().insert(calendarId='primary', body=event).execute()
+    get_calendar_service(user_id).events().insert(calendarId='primary', body=event).execute()
 
 
 @after_setup_logger.connect

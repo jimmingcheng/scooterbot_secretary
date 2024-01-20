@@ -8,7 +8,6 @@ from llm_task_handler.handler import ProgressMessageFunc
 from llm_task_handler.handler import TaskState
 
 from secretary import celery_tasks
-from secretary.celery_tasks import AddCalendarEventArgs
 
 
 class AddCalendarEventBase(OpenAIFunctionTaskHandler, ABC):

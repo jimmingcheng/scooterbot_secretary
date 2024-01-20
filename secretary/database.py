@@ -40,24 +40,29 @@ class UserTable:
 class ChannelTable:
     table = get_channel_table()
 
-    def upsert(self, channel_user_id: str, user_id: str) -> None:
+    @classmethod
+    def channel_id(cls, channel_type: str, channel_user_id: str) -> str:
+        return f'{channel_type}:{channel_user_id}'
+
+    def upsert(self, channel_type: str, channel_user_id: str, user_id: str) -> None:
         self.table.put_item(Item={
+            'channel_id': ChannelTable.channel_id(channel_type, channel_user_id),
+            'channel_type': channel_type,
             'channel_user_id': channel_user_id,
             'user_id': user_id,
         })
 
-    def get(self, channel_user_id: str) -> dict:
+    def get(self, channel_type: str, channel_user_id: str) -> dict:
         try:
-            return self.table.get_item(Key={'channel_user_id': channel_user_id})['Item']
+            channel_id = ChannelTable.channel_id(channel_type, channel_user_id)
+            return self.table.get_item(Key={'channel_id': channel_id})['Item']
         except KeyError:
             raise NoSuchUserError(channel_user_id)
 
-    def look_up_user_id(self, channel_user_id: str) -> str:
-        return self.table.get_item(Key={'channel_user_id': channel_user_id})['Item']['user_id']
+    def look_up_user_id(self, channel_type: str, channel_user_id: str) -> str:
+        channel_id = ChannelTable.channel_id(channel_type, channel_user_id)
+        return self.table.get_item(Key={'channel_id': channel_id})['Item']['user_id']
 
 
-def remove_account(user_id: str) -> None:
-    # user = UserTable().get(user_id)
-    google_apis_user_id = ChannelTable().look_up_user_id(user_id)
-    UserTable().delete(google_apis_user_id)
-    # get_oauth_table().delete_item(Key={'user_id': user['google_apis_user_id']})
+def disconnect_channel(user_id: str) -> None:
+    pass

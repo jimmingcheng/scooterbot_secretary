@@ -17,13 +17,13 @@ from secretary.google_apis import get_userdb_client
 
 
 def step2(request: HttpRequest) -> HttpResponse:
-    user_id = request.GET.get('u', '')
+    discord_user_id = request.GET.get('u', '')
     discord_channel = request.GET.get('ch', '')
 
     url = get_userdb_client().get_authorization_url(
         redirect_url='https://secretary.scooterbot.ai/login/step3',
         access_type='offline',
-        state=f'u={user_id}&ch={discord_channel}',
+        state=f'u={discord_user_id}&ch={discord_channel}',
         prompt='consent',
     )
     return HttpResponseRedirect(url)
@@ -33,15 +33,15 @@ def step3(request: HttpRequest) -> HttpResponse:
     code = request.GET['code']
     state = request.GET['state']
 
-    google_apis_user_id = get_userdb_client().save_user_and_credentials(code)
+    user_id = get_userdb_client().save_user_and_credentials(code)
 
     state_data = {k: v[0] for k, v in parse_qs(state).items()}
-    user_id = state_data.get('u') or google_apis_user_id
+    discord_user_id = state_data.get('u')
     discord_channel = state_data.get('ch')
 
     url = (
         'https://secretary.scooterbot.ai/login/step4'
-        f'?user_id={user_id}&google_apis_user_id={google_apis_user_id}'
+        f'?discord_user_id={discord_user_id}&user_id={user_id}'
     )
     if discord_channel:
         url += f'&discord_channel={discord_channel}'
@@ -50,8 +50,8 @@ def step3(request: HttpRequest) -> HttpResponse:
 
 
 def step4_calendar_list(request: HttpRequest) -> JsonResponse:
-    google_apis_user_id = request.GET['google_apis_user_id']
-    calendars = get_calendar_service(google_apis_user_id).calendarList().list().execute()['items']
+    user_id = request.GET['user_id']
+    calendars = get_calendar_service(user_id).calendarList().list().execute()['items']
     return JsonResponse({
         'calendars': [
             {
@@ -64,12 +64,12 @@ def step4_calendar_list(request: HttpRequest) -> JsonResponse:
 
 
 def step5(request: HttpRequest) -> HttpResponse:
-    discord_user_id = request.POST['user_id']
-    google_apis_user_id = request.POST['google_apis_user_id']
+    discord_user_id = request.POST['discord_user_id']
+    user_id = request.POST['user_id']
     todo_calendar_id = request.POST['todo_calendar_id']
     discord_channel = request.POST['discord_channel']
 
-    cal_service = get_calendar_service(google_apis_user_id)
+    cal_service = get_calendar_service(user_id)
 
     if todo_calendar_id == 'new':
         cal = cal_service.calendars().insert(
@@ -79,8 +79,8 @@ def step5(request: HttpRequest) -> HttpResponse:
         ).execute()
         todo_calendar_id = cal['id']
 
-    ChannelTable().upsert(channel_user_id=discord_user_id, user_id=google_apis_user_id)
-    UserTable().upsert(user_id=google_apis_user_id, todo_calendar_id=todo_calendar_id)
+    ChannelTable().upsert(channel_type='discord', channel_user_id=discord_user_id, user_id=user_id)
+    UserTable().upsert(user_id=user_id, todo_calendar_id=todo_calendar_id)
 
     cal = cal_service.calendars().get(calendarId=todo_calendar_id).execute()
 
@@ -114,19 +114,19 @@ def alexa_step2(request: HttpRequest) -> HttpResponse:
     code = request.GET['code']
     state = request.GET['state']
 
-    google_apis_user_id = get_userdb_client().save_user_and_credentials(code)
+    user_id = get_userdb_client().save_user_and_credentials(code)
 
-    url = _save_alexa_user_and_redirect(google_apis_user_id, state)
+    url = _save_alexa_user_and_redirect(user_id, state)
 
     return HttpResponseRedirect(url)
 
 
-def _save_alexa_user_and_redirect(google_apis_user_id: str, state: str) -> str:
+def _save_alexa_user_and_redirect(user_id: str, state: str) -> str:
     alexa_state, alexa_redirect_uri = _unpack_alexa_state(state)
     alexa_access_token = str(uuid1())
 
-    ChannelTable().upsert(channel_user_id=alexa_access_token, user_id=google_apis_user_id)
-    UserTable().upsert(user_id=google_apis_user_id, todo_calendar_id='qrvfc4qvfm5d2kh0m6g9euo4s8@group.calendar.google.com')
+    ChannelTable().upsert(channel_type='alexa', channel_user_id=alexa_access_token, user_id=user_id)
+    UserTable().upsert(user_id=user_id, todo_calendar_id='qrvfc4qvfm5d2kh0m6g9euo4s8@group.calendar.google.com')
 
     return (
         f'{alexa_redirect_uri}#state={alexa_state}'

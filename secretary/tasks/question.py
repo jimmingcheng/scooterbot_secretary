@@ -67,8 +67,7 @@ class AnswerQuestionFromCalendar(OpenAIFunctionTaskHandler):
         print(f'Fetching events between {start_time} and {end_time}')
 
         # aiogoogle doesn't work for some reason
-        google_apis_user_id = ChannelTable().look_up_user_id(self.user_id)
-        events = get_calendar_service(google_apis_user_id).events().list(
+        events = get_calendar_service(self.user_id).events().list(
             calendarId='primary',
             timeMin=start_time.isoformat() if start_time else None,
             timeMax=end_time.isoformat() if end_time else None,
