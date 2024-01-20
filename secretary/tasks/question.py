@@ -29,11 +29,19 @@ class AnswerQuestionFromCalendar(OpenAIFunctionTaskHandler):
                     },
                     'start_time': {
                         'type': 'string',
-                        'description': 'Start of the question\'s time range in the format YYYY-MM-DDTHH:mm:ssZZ. "this weekend" = the coming weekend.',
+                        'description': 'Approximate start of time range that the question pertains to in the format YYYY-MM-DDTHH:mm:ssZZ. "this weekend" = the coming weekend.',
                     },
                     'end_time': {
                         'type': 'string',
-                        'description': 'End of the question\'s time range in the format YYYY-MM-DDTHH:mm:ssZZ',
+                        'description': 'Approximate end of time range that the question pertains to in the format YYYY-MM-DDTHH:mm:ssZZ',
+                    },
+                    'is_question_about_past': {
+                        'type': 'boolean',
+                        'description': 'Whether the question pertains to events from the past',
+                    },
+                    'is_question_about_future': {
+                        'type': 'boolean',
+                        'description': 'Whether the question pertains to events in the future',
                     },
                 },
                 'required': ['question'],
@@ -45,18 +53,18 @@ class AnswerQuestionFromCalendar(OpenAIFunctionTaskHandler):
         cur_state: TaskState,
         progress_message_func: Optional[ProgressMessageFunc] = None,
     ) -> TaskState:
-        return TaskState(
-            handler=self,
-            user_prompt=cur_state.user_prompt,
-            reply='Next week, you have a PTA meeting on Tuesday at 6:30pm. You also have a dentist appointment on Thursday at 2:00pm.',
-            is_done=True,
-        )
-
         args = cur_state.custom_state
+        print(args)
 
         question = args['question']
-        start_time = arrow.get(args['start_time']) if args.get('start_time') else None
-        end_time = arrow.get(args['end_time']) if args.get('end_time') else None
+        start_time, end_time = self._events_start_end_times(
+            args.get('start_time'),
+            args.get('end_time'),
+            args.get('is_question_about_past'),
+            args.get('is_question_about_future'),
+        )
+
+        print(f'Fetching events between {start_time} and {end_time}')
 
         # aiogoogle doesn't work for some reason
         user = UserTable().get(self.user_id)
@@ -71,6 +79,7 @@ class AnswerQuestionFromCalendar(OpenAIFunctionTaskHandler):
         prompt = f'''
 # Instructions
 
+Current time is {arrow.now().format('YYYY-MM-DDTHH:mm:ssZZ')}.
 Answer the question using only the provided events data.
 
 # Question
@@ -83,7 +92,6 @@ Answer the question using only the provided events data.
 
         prompt += self.events_yaml(events)
 
-        import logging; logging.info(prompt)
         chat_model = ChatOpenAI(  # type: ignore
             model_name='gpt-4-1106-preview',
             temperature=0,
@@ -106,11 +114,38 @@ Answer the question using only the provided events data.
             {
                 'when': self._get_time_phrase(event),
                 'where': event.get('location'),
-                'what': event['summary'],
+                'what': event.get('summary'),
                 'details': event.get('description'),
             }
             for event in events
         ])
+
+    def _events_start_end_times(
+        self,
+        q_start_time: Optional[str],
+        q_end_time: Optional[str],
+        is_question_about_past: Optional[bool],
+        is_question_about_future: Optional[bool],
+    ) -> tuple[arrow.Arrow, arrow.Arrow]:
+        if q_start_time:
+            start_time = arrow.get(q_start_time)
+
+        if q_end_time:
+            end_time = arrow.get(q_end_time)
+
+        if is_question_about_past:
+            if not q_start_time:
+                start_time = arrow.now().shift(years=-1)
+            if not q_end_time:
+                end_time = arrow.now()
+
+        if is_question_about_future:
+            if not q_start_time:
+                start_time = arrow.now()
+            if not q_end_time:
+                end_time = arrow.now().shift(years=1)
+
+        return start_time, end_time
 
     def _get_time_phrase(self, event: dict) -> str:
         start = self._get_event_time(event['start']).to('US/Pacific')
