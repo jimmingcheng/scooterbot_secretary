@@ -10,6 +10,10 @@ def get_user_table() -> Any:
     return boto3.resource('dynamodb', 'us-west-2').Table('scooterbot_secretary_user')
 
 
+def get_channel_table() -> Any:
+    return boto3.resource('dynamodb', 'us-west-2').Table('scooterbot_secretary_channel')
+
+
 def get_oauth_table() -> Any:
     return boto3.resource('dynamodb', 'us-west-2').Table('scooterbot_secretary_oauth')
 
@@ -17,10 +21,9 @@ def get_oauth_table() -> Any:
 class UserTable:
     table = get_user_table()
 
-    def upsert(self, user_id: str, google_apis_user_id: str, todo_calendar_id: str) -> None:
+    def upsert(self, user_id: str, todo_calendar_id: str) -> None:
         self.table.put_item(Item={
             'user_id': user_id,
-            'google_apis_user_id': google_apis_user_id,
             'todo_calendar_id': todo_calendar_id,
         })
 
@@ -34,7 +37,27 @@ class UserTable:
         self.table.delete_item(Key={'user_id': user_id})
 
 
+class ChannelTable:
+    table = get_channel_table()
+
+    def upsert(self, channel_user_id: str, user_id: str) -> None:
+        self.table.put_item(Item={
+            'channel_user_id': channel_user_id,
+            'user_id': user_id,
+        })
+
+    def get(self, channel_user_id: str) -> dict:
+        try:
+            return self.table.get_item(Key={'channel_user_id': channel_user_id})['Item']
+        except KeyError:
+            raise NoSuchUserError(channel_user_id)
+
+    def look_up_user_id(self, channel_user_id: str) -> str:
+        return self.table.get_item(Key={'channel_user_id': channel_user_id})['Item']['user_id']
+
+
 def remove_account(user_id: str) -> None:
-    user = UserTable().get(user_id)
-    UserTable().delete(user_id)
-    #get_oauth_table().delete_item(Key={'user_id': user['google_apis_user_id']})
+    # user = UserTable().get(user_id)
+    google_apis_user_id = ChannelTable().look_up_user_id(user_id)
+    UserTable().delete(google_apis_user_id)
+    # get_oauth_table().delete_item(Key={'user_id': user['google_apis_user_id']})

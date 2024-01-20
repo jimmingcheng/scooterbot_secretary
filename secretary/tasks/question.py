@@ -9,7 +9,7 @@ from llm_task_handler.handler import ProgressMessageFunc
 from llm_task_handler.handler import TaskState
 
 from secretary.calendar import get_calendar_service
-from secretary.database import UserTable
+from secretary.database import ChannelTable
 
 
 class AnswerQuestionFromCalendar(OpenAIFunctionTaskHandler):
@@ -67,8 +67,8 @@ class AnswerQuestionFromCalendar(OpenAIFunctionTaskHandler):
         print(f'Fetching events between {start_time} and {end_time}')
 
         # aiogoogle doesn't work for some reason
-        user = UserTable().get(self.user_id)
-        events = get_calendar_service(user['google_apis_user_id']).events().list(
+        google_apis_user_id = ChannelTable().look_up_user_id(self.user_id)
+        events = get_calendar_service(google_apis_user_id).events().list(
             calendarId='primary',
             timeMin=start_time.isoformat() if start_time else None,
             timeMax=end_time.isoformat() if end_time else None,

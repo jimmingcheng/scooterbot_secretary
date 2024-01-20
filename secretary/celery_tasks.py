@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 import secretary
 from secretary.calendar import get_calendar_service
-from secretary.database import UserTable
+from secretary.database import ChannelTable
 
 
 REDIS_HOST = 'redis'
@@ -82,8 +82,8 @@ async def _add_calendar_event(user_id: str, args: AddCalendarEventArgs) -> None:
         event['end'] = {'dateTime': end_time.format('YYYY-MM-DDTHH:mm:ssZZ')}
 
     # aiogoogle doesn't work for some reason
-    user = UserTable().get(user_id)
-    get_calendar_service(user['google_apis_user_id']).events().insert(calendarId='primary', body=event).execute()
+    google_apis_user_id = ChannelTable().look_up_user_id(user_id)
+    get_calendar_service(google_apis_user_id).events().insert(calendarId='primary', body=event).execute()
 
 
 @after_setup_logger.connect

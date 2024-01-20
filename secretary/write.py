@@ -5,6 +5,7 @@ from typing import Tuple
 
 from secretary.calendar import event_start_time
 from secretary.calendar import get_calendar_service
+from secretary.database import ChannelTable
 from secretary.database import UserTable
 from secretary.todo_emailer import send_email
 from secretary.todo_emailer import should_remind_today
@@ -23,7 +24,7 @@ Here's an example:
 Output only the json.
     """
 
-    completion_text = openai.ChatCompletion.create(
+    completion_text = openai.ChatCompletion.create(  # type: ignore
         model='gpt-3.5-turbo',
         messages=[
             {'role': 'system', 'content': instructions_prompt},
@@ -52,8 +53,8 @@ Output only the json.
 
 
 def add_todo(user_id: str, description: str, date: arrow.Arrow) -> Tuple[dict, int]:
-    user = UserTable().get(user_id)
-    google_apis_user_id = user['google_apis_user_id']
+    google_apis_user_id = ChannelTable().look_up_user_id(user_id)
+    user = UserTable().get(google_apis_user_id)
     calendar_id = user['todo_calendar_id']
 
     cal_service = get_calendar_service(google_apis_user_id)

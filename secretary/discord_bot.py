@@ -9,7 +9,7 @@ from llm_task_handler.dispatch import TaskDispatcher
 
 import secretary
 from secretary.database import NoSuchUserError
-from secretary.database import UserTable
+from secretary.database import ChannelTable
 from secretary.tasks.account import DisconnectAccount
 from secretary.tasks.calendar import AddCalendarEventFromDiscord
 from secretary.tasks.question import AnswerQuestionFromCalendar
@@ -38,7 +38,7 @@ class SecretaryDiscordBot(LLMDiscordBot):
     async def reply(self, message: Message) -> Optional[str]:
         try:
             user_id = str(message.author.id)
-            UserTable().get(user_id)
+            ChannelTable().get(channel_user_id=user_id)
         except NoSuchUserError:
             return self.signup_message(message)
 

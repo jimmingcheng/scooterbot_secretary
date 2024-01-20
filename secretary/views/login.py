@@ -11,6 +11,7 @@ from uuid import uuid1
 
 from secretary.calendar import get_calendar_service
 from secretary.clients import discord
+from secretary.database import ChannelTable
 from secretary.database import UserTable
 from secretary.google_apis import get_userdb_client
 
@@ -63,7 +64,7 @@ def step4_calendar_list(request: HttpRequest) -> JsonResponse:
 
 
 def step5(request: HttpRequest) -> HttpResponse:
-    user_id = request.POST['user_id']
+    discord_user_id = request.POST['user_id']
     google_apis_user_id = request.POST['google_apis_user_id']
     todo_calendar_id = request.POST['todo_calendar_id']
     discord_channel = request.POST['discord_channel']
@@ -78,13 +79,14 @@ def step5(request: HttpRequest) -> HttpResponse:
         ).execute()
         todo_calendar_id = cal['id']
 
-    UserTable().upsert(user_id, google_apis_user_id, todo_calendar_id)
+    ChannelTable().upsert(channel_user_id=discord_user_id, user_id=google_apis_user_id)
+    UserTable().upsert(user_id=google_apis_user_id, todo_calendar_id=todo_calendar_id)
 
     cal = cal_service.calendars().get(calendarId=todo_calendar_id).execute()
 
     if discord_channel:
         discord.say(
-            f"You're all set <@{user_id}>. "
+            f"You're all set <@{discord_user_id}>. "
             f"I'll save your todos in this calendar: {cal['summary']}",
             channel=discord_channel
         )
@@ -123,7 +125,8 @@ def _save_alexa_user_and_redirect(google_apis_user_id: str, state: str) -> str:
     alexa_state, alexa_redirect_uri = _unpack_alexa_state(state)
     alexa_access_token = str(uuid1())
 
-    UserTable().upsert(alexa_access_token, google_apis_user_id, 'qrvfc4qvfm5d2kh0m6g9euo4s8@group.calendar.google.com')
+    ChannelTable().upsert(channel_user_id=alexa_access_token, user_id=google_apis_user_id)
+    UserTable().upsert(user_id=google_apis_user_id, todo_calendar_id='qrvfc4qvfm5d2kh0m6g9euo4s8@group.calendar.google.com')
 
     return (
         f'{alexa_redirect_uri}#state={alexa_state}'
