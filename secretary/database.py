@@ -37,4 +37,4 @@ class UserTable:
 def remove_account(user_id: str) -> None:
     user = UserTable().get(user_id)
     UserTable().delete(user_id)
-    get_oauth_table().delete_item(Key={'user_id': user['google_apis_user_id']})
+    #get_oauth_table().delete_item(Key={'user_id': user['google_apis_user_id']})

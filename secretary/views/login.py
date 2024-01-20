@@ -23,6 +23,7 @@ def step2(request: HttpRequest) -> HttpResponse:
         redirect_url='https://secretary.scooterbot.ai/login/step3',
         access_type='offline',
         state=f'u={user_id}&ch={discord_channel}',
+        prompt='consent',
     )
     return HttpResponseRedirect(url)
 
@@ -98,9 +99,10 @@ def alexa_step1(request: HttpRequest) -> HttpResponse:
     state = _pack_alexa_state(alexa_state, alexa_redirect_uri)
 
     url = get_userdb_client().get_authorization_url(
-        state=state,
         redirect_url='https://secretary.scooterbot.ai/login/alexa/step2',
+        state=state,
         access_type='offline',
+        prompt='consent',
     )
 
     return HttpResponseRedirect(url)
