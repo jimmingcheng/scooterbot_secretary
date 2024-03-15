@@ -76,6 +76,19 @@ class AddCalendarEventBase(OpenAIFunctionTaskHandler, ABC):
             )
 
 
+class AddCalendarEventFromSMS(AddCalendarEventBase):
+    def confirmation_message_description(self) -> str:
+        return """
+SMS message to be sent to the user. e.g.:
+
+Added to your calendar:
+
+Title: Doctor's appointment
+Date/Time: October 5, 2023, 4-6:30pm
+Location: 123 Main St, San Francisco, CA 94105
+        """
+
+
 class AddCalendarEventFromAlexa(AddCalendarEventBase):
     def confirmation_message_description(self) -> str:
         return """

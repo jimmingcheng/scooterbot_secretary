@@ -25,22 +25,30 @@ function LoginStep4() {
 
   return (
     <>
-      <h1>Select calendar for To Do list</h1>
+      <h1>You're almost done...</h1>
 
-      <p>I'll use a special calendar to keep track of your To Do list. It's best to use a dedicated calendar for this.</p>
+      <form class="signup_form" action="/login/step5" method="POST">
+        <h2>Communicate via SMS</h2>
 
-      <form action="/login/step5" method="POST">
+        <p>By providing your phone number, you agree to receive SMS messages from Secretary bot. Message and data rates may apply. You can opt out at any time by replying STOP.</p>
+
+        <input type="text" name="sms_number" placeholder="+14151234567" />
+
+        <h2>Select a calendar for your To Do list</h2>
+
+        <p>I'll use a special calendar to keep track of your To Do list. It's best to use a dedicated calendar for this.</p>
+
         <select name="todo_calendar_id">
           <option value="new">Create a new calendar called: ➤ To Do</option>
           {calendars.map((cal) => (
-            <option value={cal.id} key={cal.id}>{cal.summary}</option>
+            <option value={cal.id} key={cal.id} selected={cal.summary === "➤ To Do"}>{cal.summary}</option>
           ))}
         </select>
-        <br />
-        <input type="hidden" name="discord_user_id" value={discord_user_id || ''} />
         <input type="hidden" name="user_id" value={user_id || ''} />
+        <input type="hidden" name="discord_user_id" value={discord_user_id || ''} />
         <input type="hidden" name="discord_channel" value={discord_channel || ''} />
-        <input type="submit" value="Submit" />
+
+        <input type="submit" value="Complete Sign Up" />
       </form>
     </>
   );

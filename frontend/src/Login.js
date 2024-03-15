@@ -7,8 +7,8 @@ function useQuery() {
 
 function Login() {
   const query = useQuery();
-  const user_id = query.get('u');
-  const discord_channel = query.get('ch');
+  const discord_user_id = query.get('du');
+  const discord_channel = query.get('dch');
 
   return (
     <>
@@ -20,7 +20,7 @@ function Login() {
         <p>In order to provide useful services as your Secretary, we'll access some of your private data such as:</p>
 
         <ul>
-          <li>The natural language requests you submit directly to Scooterbot AI by mentioning <code>@secretary</code> in your Discord messages</li>
+          <li>The natural language requests you submit directly to Scooterbot AI during chats</li>
           <li>Your Google Calendar events and schedules</li>
         </ul>
 
@@ -29,7 +29,7 @@ function Login() {
         <h3>Use of Data</h3>
         <p>The data we collect is solely used for fulfilling tasks on your calendar such as reading your schedule and creating events. This includes:</p>
         <ul>
-          <li>When you mention <code>@secretary</code> in a Discord message, we'll send the message text to ChatGPT, a 3rd party AI owned by OpenAI.</li>
+          <li>When send a message to your Secretary, we'll forward the message text to ChatGPT, a 3rd party AI owned by OpenAI.</li>
           <li>After OpenAI interprets your message, we'll use the interpreted instructions to read or write to your Google Calendar on your behalf.</li>
           <li>In some cases, the specific Google Calendar data you request will be sent back to ChatGPT for further interpretation.</li>
         </ul>
@@ -41,8 +41,8 @@ function Login() {
       </div>
 
       <form action="/login/step2" method="GET">
-        <input type="hidden" name="u" value={user_id || ''} />
-        <input type="hidden" name="ch" value={discord_channel || ''} />
+        <input type="hidden" name="discord_user_id" value={discord_user_id || ''} />
+        <input type="hidden" name="discord_channel" value={discord_channel || ''} />
         <button type="submit" class="login">
           <img src={gcal_logo} alt="Google Calendar Logo" />
           Connect Google Calendar

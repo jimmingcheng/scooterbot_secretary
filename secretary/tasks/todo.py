@@ -58,6 +58,16 @@ class AddTodoBase(OpenAIFunctionTaskHandler, ABC):
         )
 
 
+class AddTodoFromSMS(AddTodoBase):
+    def formatted_reply(self, task_name: str, due_date: arrow.Arrow) -> str:
+        return f'''
+Here's your todo:
+
+Description: {task_name}
+Due Date: {due_date.format('dddd, MMMM D, YYYY')}
+'''
+
+
 class AddTodoFromAlexa(AddTodoBase):
     def formatted_reply(self, task_name: str, due_date: arrow.Arrow) -> str:
         return f'''

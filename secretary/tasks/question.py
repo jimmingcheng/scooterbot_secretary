@@ -9,7 +9,6 @@ from llm_task_handler.handler import ProgressMessageFunc
 from llm_task_handler.handler import TaskState
 
 from secretary.calendar import get_calendar_service
-from secretary.database import ChannelTable
 
 
 class AnswerQuestionFromCalendar(OpenAIFunctionTaskHandler):
@@ -54,7 +53,8 @@ class AnswerQuestionFromCalendar(OpenAIFunctionTaskHandler):
         progress_message_func: Optional[ProgressMessageFunc] = None,
     ) -> TaskState:
         args = cur_state.custom_state
-        print(args)
+        import logging
+        logging.error(args)
 
         question = args['question']
         start_time, end_time = self._events_start_end_times(
@@ -64,7 +64,7 @@ class AnswerQuestionFromCalendar(OpenAIFunctionTaskHandler):
             args.get('is_question_about_future'),
         )
 
-        print(f'Fetching events between {start_time} and {end_time}')
+        logging.error(f'Fetching events between {start_time} and {end_time}')
 
         # aiogoogle doesn't work for some reason
         events = get_calendar_service(self.user_id).events().list(
@@ -99,7 +99,7 @@ Answer the question using only the provided events data.
 
         reply = chat_model([
             HumanMessage(content=prompt),
-        ])
+        ]).content
 
         return TaskState(
             handler=self,

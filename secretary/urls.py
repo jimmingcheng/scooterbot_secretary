@@ -6,6 +6,7 @@ from django.views.generic import TemplateView
 from secretary.alexa import get_skill_builder
 from secretary.views import login
 from secretary.views import read
+from secretary.views import twilio
 from secretary.views import webhooks
 
 
@@ -31,4 +32,5 @@ urlpatterns = [
         verify_timestamp=False,
     )),
     re_path(r'^todos$', read.get_todos_for_day),
+    re_path(r'^twilio/sms_reply$', twilio.sms_reply),
 ]
