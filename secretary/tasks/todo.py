@@ -8,6 +8,81 @@ from llm_task_handler.handler import ProgressMessageFunc
 from llm_task_handler.handler import TaskState
 
 from secretary.write import add_todo
+from secretary.read import get_todos
+from secretary.read import Todo
+
+
+class GetTodosBase(OpenAIFunctionTaskHandler, ABC):
+    def task_type(self) -> str:
+        return 'list_todos_reminders_or_tasks'
+
+    @abstractmethod
+    def formatted_reply(self, todos: list[Todo]) -> str:
+        pass
+
+    def intent_selection_function(self) -> dict:
+        return {
+            'name': self.task_type(),
+            'description': 'List todos, reminders, or tasks.',
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'start_date': {
+                        'type': 'string',
+                        'description': 'Approximate start of date range to fetch from in the format YYYY-MM-DD. "this weekend" = the coming weekend. If not provided, defaults to today.',
+                    },
+                    'end_date': {
+                        'type': 'string',
+                        'description': 'Approximate end of date range to fetch from in the format YYYY-MM-DD. "this weekend" = the coming weekend. If not provided, defaults to 7 days from now.',
+                    },
+                },
+                'required': ['task_name', 'start_date', 'end_date'],
+            }
+        }
+
+    async def transition(
+        self,
+        cur_state: TaskState,
+        progress_message_func: Optional[ProgressMessageFunc] = None,
+    ) -> TaskState:
+        cs = cur_state.custom_state
+
+        todos = get_todos(
+            self.user_id,
+            arrow.get(cs['start_date']),
+            arrow.get(cs['end_date']),
+        )
+
+        reply = self.formatted_reply(todos)
+
+        return TaskState(
+            handler=self,
+            user_prompt=cur_state.user_prompt,
+            reply=reply,
+            is_done=True,
+        )
+
+
+class GetTodosFromSMS(GetTodosBase):
+    def formatted_reply(self, todos: list[Todo]) -> str:
+        return '\n\n'.join([
+            (
+                f'{todo.task_name}\n'
+                f"(due {todo.due_date.format('dddd, MMMM D, YYYY')})"
+            )
+            for todo in todos
+        ])
+
+
+class GetTodosFromDiscord(GetTodosBase):
+    def formatted_reply(self, todos: list[Todo]) -> str:
+        return '>>> ' + '\n\n'.join([
+            (
+                f'**{todo.task_name}**\n'
+                f'{todo.due_date.format("dddd, MMMM D, YYYY")}'
+            )
+            for todo in todos
+        ])
 
 
 class AddTodoBase(OpenAIFunctionTaskHandler, ABC):
@@ -63,8 +138,8 @@ class AddTodoFromSMS(AddTodoBase):
         return f'''
 Here's your todo:
 
-Description: {task_name}
-Due Date: {due_date.format('dddd, MMMM D, YYYY')}
+Todo: {task_name}
+Due: {due_date.format('dddd, MMMM D, YYYY')}
 '''
 
 

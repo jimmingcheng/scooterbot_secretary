@@ -13,6 +13,7 @@ from secretary.database import ChannelTable
 from secretary.tasks.account import DisconnectAccount
 from secretary.tasks.calendar import AddCalendarEventFromDiscord
 from secretary.tasks.question import AnswerQuestionFromCalendar
+from secretary.tasks.todo import GetTodosFromDiscord
 from secretary.tasks.todo import AddTodoFromDiscord
 
 
@@ -31,6 +32,7 @@ class SecretaryDiscordBot(LLMDiscordBot):
             AddCalendarEventFromDiscord(user_id=sb_user_id),
             AddTodoFromDiscord(user_id=sb_user_id),
             DisconnectAccount(user_id=sb_user_id),
+            GetTodosFromDiscord(user_id=sb_user_id),
         ])
 
     def monitored_channels(self) -> list[int]:
