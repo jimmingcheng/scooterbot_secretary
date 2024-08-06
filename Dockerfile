@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -30,8 +30,9 @@ RUN virtualenv venv --python=python3.11
 RUN /app/venv/bin/pip install poetry==1.3.2
 RUN . /app/venv/bin/activate && /app/venv/bin/poetry install
 
-RUN useradd -ms /bin/bash -g root -u 1000 jimming
-USER jimming
+RUN groupadd -g 72277 sbapp
+RUN useradd -ms /bin/bash -g sbapp -u 1001 scooterbot
+USER scooterbot
 
 CMD [ \
   "/app/venv/bin/uwsgi", \
