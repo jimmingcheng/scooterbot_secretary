@@ -9,7 +9,7 @@ def load_all_configs() -> None:
 
 
 def load_todo_config() -> None:
-    staticconf.YamlConfiguration('/run/config/secretary.yaml', namespace='secretary')
+    staticconf.YamlConfiguration('/sb/config/secretary.yaml', namespace='secretary')
     openai.api_key = staticconf.read('openai_api_key', namespace='secretary')  # type: ignore
 
 
