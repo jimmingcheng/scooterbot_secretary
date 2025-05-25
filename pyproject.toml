@@ -37,8 +37,9 @@ twilio = "^8.11.1"
 weaviate-client = "^4.10.2"
 pydantic = "^2.10.4"
 hubitat-maker-api-client = "^2.5.1"
-openai-agents = "^0.0.14"
+openai-agents = "^0.0.15"
 googlemaps = "^4.10.0"
+mcp = "^1.9.0"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "<6"

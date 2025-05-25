@@ -1,54 +1,59 @@
-from typing import Optional
-
-import asyncio
 import discord
-import staticconf
+from agents import Runner
+from discord import ChannelType
 from discord import Message
-from llm_discord_bot.bot import LLMDiscordBot
-from llm_task_handler.dispatch import TaskDispatcher
 
 import secretary
+from secretary.config import discord_bot_token
+from secretary.agents.main_agent import get_secretary_agent
 from secretary.database import NoSuchUserError
 from secretary.database import ChannelTable
-from secretary.tasks.account import DisconnectAccount
-from secretary.tasks.calendar import AddCalendarEventFromDiscord
-from secretary.tasks.question import AnswerQuestionFromCalendar
-from secretary.tasks.todo import GetTodosFromDiscord
-from secretary.tasks.todo import AddTodoFromDiscord
 
 
-class SecretaryDiscordBot(LLMDiscordBot):
-    def bot_token(self) -> str:
-        return staticconf.read('discord.bot_token', namespace='secretary')  # type: ignore
+class SecretaryDiscordBot(discord.Client):
+    async def on_message(self, message: Message) -> None:
+        if not self.should_reply_to_message(message):
+            return
 
-    def prompt_task_dispatcher(self, user_id: str) -> TaskDispatcher:
-        return TaskDispatcher([
-        ])
+        async with message.channel.typing():
+            reply = await self.reply(message)
+        if reply:
+            await message.channel.send(reply)
 
-    def conversation_task_dispatcher(self, user_id: str) -> TaskDispatcher:
-        sb_user_id = ChannelTable().look_up_user_id('discord', user_id)
-        return TaskDispatcher([
-            AnswerQuestionFromCalendar(user_id=sb_user_id),
-            AddCalendarEventFromDiscord(user_id=sb_user_id),
-            AddTodoFromDiscord(user_id=sb_user_id),
-            DisconnectAccount(user_id=sb_user_id),
-            GetTodosFromDiscord(user_id=sb_user_id),
-        ])
+    async def reply(self, message: Message) -> str | None:
+        try:
+            ChannelTable().get('discord', str(message.author.id))
+        except NoSuchUserError:
+            return self.signup_message(message)
+
+        sb_user_id = ChannelTable().look_up_user_id('discord', str(message.author.id))
+        async with get_secretary_agent(sb_user_id) as agent:
+            result = await Runner().run(
+                agent,
+                f"{message.content} (reply in the format of a Discord message)"
+            )
+
+            return result.final_output
 
     def monitored_channels(self) -> list[int]:
         return []
 
-    async def reply(self, message: Message) -> Optional[str]:
-        try:
-            user_id = str(message.author.id)
-            ChannelTable().get('discord', user_id)
-        except NoSuchUserError:
-            return self.signup_message(message)
-
-        try:
-            return await asyncio.wait_for(super().reply(message), timeout=20) or '🤷'
-        except asyncio.TimeoutError:
-            return '🤷 timeout'
+    def should_reply_to_message(self, message: Message) -> bool:
+        if message.author == self.user:
+            # Never reply to self, to avoid infinite loops
+            return False
+        elif message.channel.type == ChannelType.private:
+            return True
+        elif self.user in message.mentions:
+            return True
+        elif all([
+            message.channel.id in self.monitored_channels(),
+            not message.mentions,
+            not message.author.bot,
+        ]):
+            return True
+        else:
+            return False
 
     def signup_message(self, message: Message) -> str:
         return (
@@ -63,8 +68,8 @@ def run():
     intents = discord.Intents.default()
     intents.message_content = True
 
-    bot = SecretaryDiscordBot(command_prefix='$', intents=intents)
-    bot.run(bot.bot_token())
+    bot = SecretaryDiscordBot(intents=intents)
+    bot.run(discord_bot_token())
 
 
 if __name__ == '__main__':

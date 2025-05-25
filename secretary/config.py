@@ -19,4 +19,8 @@ def load_openai() -> None:
 
 
 def google_api_key() -> str:
-    return staticconf.read_string('google_apis.api_key', namespace='secretary')  # type: ignore
+    return staticconf.read('google_apis.api_key', namespace='secretary')  # type: ignore
+
+
+def discord_bot_token() -> str:
+    return staticconf.read('discord.bot_token', namespace='secretary')  # type: ignore
