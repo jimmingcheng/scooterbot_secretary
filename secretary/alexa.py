@@ -1,5 +1,7 @@
 import asyncio
 import logging
+
+from agents import Runner
 from ask_sdk_core.skill_builder import CustomSkillBuilder
 from ask_sdk_core.api_client import DefaultApiClient
 from ask_sdk_core.skill_builder import SkillBuilder
@@ -13,12 +15,9 @@ from ask_sdk_runtime.exceptions import DispatchException
 from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.utils import is_intent_name
 from ask_sdk_core.utils import is_request_type
-from llm_task_handler.dispatch import TaskDispatcher
 
+from secretary.agents.main_agent import get_secretary_agent
 from secretary.database import ChannelTable
-from secretary.tasks.calendar import AddCalendarEventFromAlexa
-from secretary.tasks.question import AnswerQuestionFromCalendar
-from secretary.tasks.todo import AddTodoFromAlexa
 
 
 class IssuePromptHandler(AbstractRequestHandler):
@@ -31,15 +30,19 @@ class IssuePromptHandler(AbstractRequestHandler):
         user_prompt = intent.slots['Prompt'].value  # type: ignore
 
         user_id = ChannelTable().look_up_user_id('alexa', access_token)
-        speech = asyncio.run(
-            TaskDispatcher([
-                AnswerQuestionFromCalendar(user_id=user_id),
-                AddCalendarEventFromAlexa(user_id=user_id),
-                AddTodoFromAlexa(user_id=user_id),
-            ]).reply(user_prompt)
-        )
 
-        handler_input.response_builder.speak(speech).set_should_end_session(True)
+        async def run_agent() -> str:
+            async with get_secretary_agent(user_id) as agent:
+                result = await Runner().run(
+                    agent,
+                    f"{user_prompt} (reply in natural spoken language)",
+                )
+
+                return result.final_output
+
+        reply = asyncio.run(run_agent())
+
+        handler_input.response_builder.speak(reply).set_should_end_session(True)
         return handler_input.response_builder.response
 
 
