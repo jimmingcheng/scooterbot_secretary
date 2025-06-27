@@ -4,6 +4,7 @@ from django_ask_sdk.skill_adapter import SkillAdapter
 from django.views.generic import TemplateView
 
 from secretary.alexa import get_skill_builder
+from secretary.views import link_accounts
 from secretary.views import login
 from secretary.views import read
 from secretary.views import twilio
@@ -17,6 +18,8 @@ urlpatterns = [
     path('signup', REACT),
     path('privacy', REACT),
     path('tos', REACT),
+    re_path(r'^link_accounts$', link_accounts.step1),
+    re_path(r'^link_accounts/step2$', link_accounts.step2),
     re_path(r'^login$', REACT),
     re_path(r'^login/step2$', login.step2),
     re_path(r'^login/step3$', login.step3),

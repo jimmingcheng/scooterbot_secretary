@@ -8,19 +8,26 @@ def load_all_configs() -> None:
     load_openai()
 
 
+def _config_read(key: str) -> str:
+    return staticconf.read(key, namespace='secretary')  # type: ignore
+
+
 def load_todo_config() -> None:
     staticconf.YamlConfiguration('/sb/config/secretary.yaml', namespace='secretary')
-    openai.api_key = staticconf.read('openai_api_key', namespace='secretary')  # type: ignore
 
 
 def load_openai() -> None:
-    openai.api_key = staticconf.read('openai_api_key', namespace='secretary')  # type: ignore
-    os.environ['OPENAI_API_KEY'] = openai.api_key  # type: ignore
+    openai.api_key = _config_read('openai_api_key')
+    os.environ['OPENAI_API_KEY'] = openai.api_key
 
 
 def google_api_key() -> str:
-    return staticconf.read('google_apis.api_key', namespace='secretary')  # type: ignore
+    return _config_read('google_apis.api_key')
 
 
 def discord_bot_token() -> str:
-    return staticconf.read('discord.bot_token', namespace='secretary')  # type: ignore
+    return _config_read('discord.bot_token')
+
+
+def account_linking_shared_secret() -> str:
+    return _config_read('account_linking.shared_secret')

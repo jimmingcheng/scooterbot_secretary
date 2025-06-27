@@ -5,7 +5,7 @@ from oauth2client.client import OAuth2Credentials
 from oauth_userdb.client import OAuthUserDBClient
 from oauth_userdb.dynamodb_client import DynamoDBOAuthUserDBClient
 
-from secretary.database import get_oauth_table
+from secretary.database import OAuthTable
 
 
 AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
@@ -22,13 +22,13 @@ def get_client_secret() -> str:
 
 
 @lru_cache(maxsize=1)
-def get_userdb_client() -> OAuthUserDBClient:
+def get_userdb_client(redirect_url: str = REDIRECT_URL) -> OAuthUserDBClient:
     return DynamoDBOAuthUserDBClient(
         client_id=get_client_id(),
         client_secret=get_client_secret(),
         authorization_url=AUTH_URL,
         token_url=TOKEN_URL,
-        redirect_url=REDIRECT_URL,
+        redirect_url=redirect_url,
         scope=[
             'openid',
             'profile',
@@ -37,7 +37,7 @@ def get_userdb_client() -> OAuthUserDBClient:
             'https://www.googleapis.com/auth/userinfo.email',
             'https://www.googleapis.com/auth/calendar',
         ],
-        dynamodb_table=get_oauth_table(),
+        dynamodb_table=OAuthTable.table,
     )
 
 

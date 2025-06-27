@@ -1,67 +1,106 @@
+from typing import Literal
+
+from dataclasses import asdict
+from dataclasses import dataclass
+
 import boto3
-from typing import Any
+from boto3.dynamodb.conditions import Key
 
 
-class NoSuchUserError(Exception):
+ChannelType = Literal['alexa', 'discord', 'sms']
+
+
+class UserDataNotFoundError(Exception):
     pass
 
 
-def get_user_table() -> Any:
-    return boto3.resource('dynamodb', 'us-west-2').Table('scooterbot_secretary_user')
+@dataclass
+class User:
+    user_id: str
+    todo_calendar_id: str | None
 
 
-def get_channel_table() -> Any:
-    return boto3.resource('dynamodb', 'us-west-2').Table('scooterbot_secretary_channel')
+@dataclass
+class Channel:
+    channel_type: ChannelType
+    channel_user_id: str
+    user_id: str
+    channel_id: str | None = None
+
+    def __post_init__(self) -> None:
+        channel_id = self.make_channel_id(self.channel_type, self.channel_user_id)
+        if self.channel_id is None:
+            self.channel_id = channel_id
+        else:
+            assert self.channel_id == channel_id, \
+                'Channel ID does not match the expected format'
+
+    @classmethod
+    def make_channel_id(cls, channel_type: ChannelType, channel_user_id: str) -> str:
+        return f'{channel_type}:{channel_user_id}'
 
 
-def get_oauth_table() -> Any:
-    return boto3.resource('dynamodb', 'us-west-2').Table('scooterbot_secretary_oauth')
+@dataclass
+class AccountLink:
+    user_id: str
+    other_account_type: str
+    other_user_id: str
 
 
 class UserTable:
-    table = get_user_table()
+    table = boto3.resource('dynamodb', 'us-west-2').Table('secretary_user')
 
-    def upsert(self, user_id: str, todo_calendar_id: str) -> None:
-        self.table.put_item(Item={
-            'user_id': user_id,
-            'todo_calendar_id': todo_calendar_id,
-        })
+    @classmethod
+    def upsert(cls, user: User) -> None:
+        cls.table.put_item(Item=asdict(user))
 
-    def get(self, user_id: str) -> dict:
+    @classmethod
+    def get(cls, user_id: str) -> User:
         try:
-            return self.table.get_item(Key={'user_id': user_id})['Item']
+            return User(**cls.table.get_item(Key={'user_id': user_id})['Item'])
         except KeyError:
-            raise NoSuchUserError(user_id)
+            raise UserDataNotFoundError
 
-    def delete(self, user_id: str) -> None:
-        self.table.delete_item(Key={'user_id': user_id})
+    @classmethod
+    def delete(cls, user_id: str) -> None:
+        cls.table.delete_item(Key={'user_id': user_id})
+
+
+class OAuthTable:
+    table = boto3.resource('dynamodb', 'us-west-2').Table('secretary_oauth')
 
 
 class ChannelTable:
-    table = get_channel_table()
+    table = boto3.resource('dynamodb', 'us-west-2').Table('secretary_channel')
 
     @classmethod
-    def channel_id(cls, channel_type: str, channel_user_id: str) -> str:
-        return f'{channel_type}:{channel_user_id}'
-
-    def upsert(self, channel_type: str, channel_user_id: str, user_id: str) -> None:
-        self.table.put_item(Item={
-            'channel_id': ChannelTable.channel_id(channel_type, channel_user_id),
-            'channel_type': channel_type,
-            'channel_user_id': channel_user_id,
-            'user_id': user_id,
-        })
-
-    def get(self, channel_type: str, channel_user_id: str) -> dict:
+    def get(cls, channel_id: str) -> Channel:
         try:
-            channel_id = ChannelTable.channel_id(channel_type, channel_user_id)
-            return self.table.get_item(Key={'channel_id': channel_id})['Item']
+            return Channel(**cls.table.get_item(Key={'channel_id': channel_id})['Item'])
         except KeyError:
-            raise NoSuchUserError(channel_user_id)
+            raise UserDataNotFoundError
 
-    def look_up_user_id(self, channel_type: str, channel_user_id: str) -> str:
-        channel_id = ChannelTable.channel_id(channel_type, channel_user_id)
-        return self.table.get_item(Key={'channel_id': channel_id})['Item']['user_id']
+    @classmethod
+    def upsert(cls, channel: Channel) -> None:
+        cls.table.put_item(Item=asdict(channel))
+
+    @classmethod
+    def delete(cls, user_id: str) -> None:
+        channels = cls.table.query(
+            IndexName='user_id-index',
+            KeyConditionExpression=Key('user_id').eq(user_id)
+        )['Items']
+
+        for item in channels:
+            cls.table.delete_item(Key={'channel_id': item['channel_id']})
+
+
+class AccountLinkTable:
+    table = boto3.resource('dynamodb', 'us-west-2').Table('secretary_account_link')
+
+    @classmethod
+    def upsert(cls, account_link: AccountLink) -> None:
+        cls.table.put_item(Item=asdict(account_link))
 
 
 def disconnect_channel(user_id: str) -> None:

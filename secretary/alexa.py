@@ -17,6 +17,7 @@ from ask_sdk_core.utils import is_intent_name
 from ask_sdk_core.utils import is_request_type
 
 from secretary.agents.main_agent import get_secretary_agent
+from secretary.database import Channel
 from secretary.database import ChannelTable
 
 
@@ -29,10 +30,10 @@ class IssuePromptHandler(AbstractRequestHandler):
         intent = handler_input.request_envelope.request.intent  # type: ignore
         user_prompt = intent.slots['Prompt'].value  # type: ignore
 
-        user_id = ChannelTable().look_up_user_id('alexa', access_token)
+        user = ChannelTable.get(Channel.make_channel_id('alexa', access_token))
 
         async def run_agent() -> str:
-            async with get_secretary_agent(user_id) as agent:
+            async with get_secretary_agent(user.user_id) as agent:
                 result = await Runner().run(
                     agent,
                     f"{user_prompt} (reply in natural spoken language)",

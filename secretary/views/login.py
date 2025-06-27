@@ -13,7 +13,9 @@ from uuid import uuid1
 
 from secretary.calendar import get_calendar_service
 from secretary.clients import discord
+from secretary.database import Channel
 from secretary.database import ChannelTable
+from secretary.database import User
 from secretary.database import UserTable
 from secretary.google_apis import get_userdb_client
 
@@ -42,8 +44,9 @@ def step2(request: HttpRequest) -> HttpResponse:
     discord_user_id = request.GET.get('discord_user_id')
     discord_channel = request.GET.get('discord_channel')
 
-    url = get_userdb_client().get_authorization_url(
+    url = get_userdb_client(
         redirect_url='https://secretary.scooterbot.ai/login/step3',
+    ).get_authorization_url(
         access_type='offline',
         state=OAuthState(discord_user_id=discord_user_id, discord_channel=discord_channel).pack(),
         prompt='consent',
@@ -98,11 +101,23 @@ def step5(request: HttpRequest) -> HttpResponse:
         todo_calendar_id = cal['id']
 
     if discord_user_id:
-        ChannelTable().upsert(channel_type='discord', channel_user_id=discord_user_id, user_id=user_id)
+        ChannelTable.upsert(
+            Channel(
+                channel_type='discord',
+                channel_user_id=discord_user_id,
+                user_id=user_id,
+            )
+        )
     if sms_number:
-        ChannelTable().upsert(channel_type='sms', channel_user_id=sms_number, user_id=user_id)
+        ChannelTable.upsert(
+            Channel(
+                channel_type='sms',
+                channel_user_id=sms_number,
+                user_id=user_id,
+            )
+        )
 
-    UserTable().upsert(user_id=user_id, todo_calendar_id=todo_calendar_id)
+    UserTable.upsert(User(user_id=user_id, todo_calendar_id=todo_calendar_id))
 
     cal = cal_service.calendars().get(calendarId=todo_calendar_id).execute()
 
@@ -122,8 +137,9 @@ def alexa_step1(request: HttpRequest) -> HttpResponse:
 
     state = _pack_alexa_state(alexa_state, alexa_redirect_uri)
 
-    url = get_userdb_client().get_authorization_url(
+    url = get_userdb_client(
         redirect_url='https://secretary.scooterbot.ai/login/alexa/step2',
+    ).get_authorization_url(
         state=state,
         access_type='offline',
         prompt='consent',
@@ -147,8 +163,14 @@ def _save_alexa_user_and_redirect(user_id: str, state: str) -> str:
     alexa_state, alexa_redirect_uri = _unpack_alexa_state(state)
     alexa_access_token = str(uuid1())
 
-    ChannelTable().upsert(channel_type='alexa', channel_user_id=alexa_access_token, user_id=user_id)
-    UserTable().upsert(user_id=user_id, todo_calendar_id='qrvfc4qvfm5d2kh0m6g9euo4s8@group.calendar.google.com')
+    channel = Channel(
+        channel_type='alexa',
+        channel_user_id=alexa_access_token,
+        user_id=user_id,
+    )
+
+    ChannelTable.upsert(channel)
+    UserTable.upsert(User(user_id=user_id, todo_calendar_id='qrvfc4qvfm5d2kh0m6g9euo4s8@group.calendar.google.com'))
 
     return (
         f'{alexa_redirect_uri}#state={alexa_state}'

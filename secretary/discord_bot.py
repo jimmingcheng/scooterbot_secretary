@@ -6,7 +6,8 @@ from discord import Message
 import secretary
 from secretary.config import discord_bot_token
 from secretary.agents.main_agent import get_secretary_agent
-from secretary.database import NoSuchUserError
+from secretary.database import UserDataNotFoundError
+from secretary.database import Channel
 from secretary.database import ChannelTable
 
 
@@ -22,12 +23,12 @@ class SecretaryDiscordBot(discord.Client):
 
     async def reply(self, message: Message) -> str | None:
         try:
-            ChannelTable().get('discord', str(message.author.id))
-        except NoSuchUserError:
+            ChannelTable.get(Channel.make_channel_id('discord', str(message.author.id)))
+        except UserDataNotFoundError:
             return self.signup_message(message)
 
-        sb_user_id = ChannelTable().look_up_user_id('discord', str(message.author.id))
-        async with get_secretary_agent(sb_user_id) as agent:
+        sb_user = ChannelTable.get(Channel.make_channel_id('discord', str(message.author.id)))
+        async with get_secretary_agent(sb_user.user_id) as agent:
             result = await Runner().run(
                 agent,
                 f"{message.content} (reply in the format of a Discord message)"

@@ -7,7 +7,7 @@ import jwt
 from apiclient import discovery
 from functools import lru_cache
 
-from secretary.database import get_oauth_table
+from secretary.database import OAuthTable
 from secretary.google_apis import get_google_apis_creds
 from secretary.calendar import event_start_time
 from secretary.calendar import get_calendar_service
@@ -220,7 +220,7 @@ def should_remind_today(event: dict, default_reminder_cfgs: List[dict]) -> bool:
 
 
 def get_formatted_email(user_id: str) -> str:
-    id_token = get_oauth_table().get_item(Key={'user_id': user_id})['Item']['id_token']
+    id_token = OAuthTable.table.get_item(Key={'user_id': user_id})['Item']['id_token']
     profile = jwt.decode(id_token, options={'verify_signature': False})
     return f"Jimming Cheng <{profile['email']}>"
 

@@ -14,7 +14,7 @@ def email_daily_todos() -> None:
     calender_tuples = {
         (row['todo_calendar_id'], row['user_id'])
         for row in
-        UserTable().table.scan(ProjectionExpression='todo_calendar_id, user_id')['Items']
+        UserTable.table.scan(ProjectionExpression='todo_calendar_id, user_id')['Items']
     }
     for (calendar_id, user_id) in calender_tuples:
         for event in get_todos_to_remind_today(calendar_id, user_id):
