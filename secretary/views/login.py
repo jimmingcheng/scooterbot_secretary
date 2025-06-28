@@ -136,7 +136,7 @@ async def step5(request: HttpRequest) -> HttpResponse:
         await discord.say(
             f"You're all set <@{discord_user_id}>. "
             f"I'll save your todos in this calendar: {cal['summary']}",
-            channel=discord_channel
+            user_id=discord_channel
         )
 
     return HttpResponse(f"I'll save your todos in this calendar: {cal['summary']}")

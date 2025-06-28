@@ -75,6 +75,15 @@ class ChannelTable:
             raise UserDataNotFoundError
 
     @classmethod
+    def get_channels_for_user_id(cls, user_id: str) -> list[Channel]:
+        items = cls.table.query(
+            IndexName='user_id-index',
+            KeyConditionExpression=Key('user_id').eq(user_id)
+        )['Items']
+
+        return [Channel(**item) for item in items]
+
+    @classmethod
     def upsert(cls, channel: Channel) -> None:
         cls.table.put_item(Item=asdict(channel))
 
