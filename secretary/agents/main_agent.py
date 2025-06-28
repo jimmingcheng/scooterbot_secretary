@@ -39,6 +39,15 @@ class SecretaryAgent(BaseSecretaryAgent):
                 link_account_to_tesla_agent,
             ]
 
+        if user_ctx.house_user_id:
+            tools += [
+                make_request_to_house_agent,
+            ]
+        else:
+            tools += [
+                link_account_to_house_agent,
+            ]
+
         super().__init__(
             name=self.__class__.__name__,
             model='gpt-4.1',
@@ -89,8 +98,23 @@ async def make_request_to_tesla_agent(ctx: UserContextWrapper, request_in_natura
 
 
 @function_tool
+async def make_request_to_house_agent(ctx: UserContextWrapper, request_in_natural_language: str) -> str:
+    """The House Agent can respond to requests about the status of the user's smart home
+    """
+    return 'The House Agent is not yet implemented. Please try again later.'
+
+
+@function_tool
 async def link_account_to_tesla_agent(ctx: UserContextWrapper) -> str:
     user_ctx = cast(UserContext, ctx.context)
     token = get_account_link_manager().make_token('secretary', user_ctx.user_id)
     url = config.account_linking_tesla_url() + '?a=secretary&u=' + user_ctx.user_id + '&t=' + token
     return 'To link your Secretary Agent with your Tesla Agent, visit: ' + url
+
+
+@function_tool
+async def link_account_to_house_agent(ctx: UserContextWrapper) -> str:
+    user_ctx = cast(UserContext, ctx.context)
+    token = get_account_link_manager().make_token('secretary', user_ctx.user_id)
+    url = config.account_linking_house_url() + '?a=secretary&u=' + user_ctx.user_id + '&t=' + token
+    return 'To link your Secretary Agent with your House Agent, visit: ' + url

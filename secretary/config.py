@@ -37,5 +37,9 @@ def account_linking_tesla_url() -> str:
     return _config_read('account_linking.tesla_url')
 
 
+def account_linking_house_url() -> str:
+    return _config_read('account_linking.house_url')
+
+
 def tesla_private_api_host() -> str:
     return _config_read('tesla_private_api_host')
