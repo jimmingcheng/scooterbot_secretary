@@ -1,11 +1,14 @@
+from typing import Any
+
+import arrow
 import discord
 from agents import Runner
 from discord import ChannelType
 from discord import Message
 
 import secretary
+from secretary.agents.main_agent import SecretaryAgent
 from secretary.config import discord_bot_token
-from secretary.agents.main_agent import get_secretary_agent
 from secretary.database import UserDataNotFoundError
 from secretary.database import Channel
 from secretary.database import ChannelTable
@@ -22,19 +25,27 @@ class SecretaryDiscordBot(discord.Client):
             await message.channel.send(reply)
 
     async def reply(self, message: Message) -> str | None:
+        messages = await self.get_convo_history_for_openai(message.channel)
+
+        messages += [
+            {'role': 'user', 'content': f'{message.content} (reply in the format of a Discord message)'},
+        ]
+
         try:
             ChannelTable.get(Channel.make_channel_id('discord', str(message.author.id)))
         except UserDataNotFoundError:
             return self.signup_message(message)
 
         sb_user = ChannelTable.get(Channel.make_channel_id('discord', str(message.author.id)))
-        async with get_secretary_agent(sb_user.user_id) as agent:
-            result = await Runner().run(
-                agent,
-                f"{message.content} (reply in the format of a Discord message)"
-            )
+        user_ctx = SecretaryAgent.get_user_context(sb_user.user_id)
 
-            return result.final_output
+        result = await Runner().run(
+            SecretaryAgent(user_ctx),
+            input=messages,  # type: ignore
+            context=user_ctx,
+        )
+
+        return result.final_output
 
     def monitored_channels(self) -> list[int]:
         return []
@@ -55,6 +66,22 @@ class SecretaryDiscordBot(discord.Client):
             return True
         else:
             return False
+
+    async def get_convo_history_for_openai(self, channel: Any) -> list[dict[str, str]]:
+        five_minutes_ago = arrow.utcnow().shift(minutes=-5)
+
+        openai_messages = []
+        async for msg in channel.history(limit=20, oldest_first=False):
+            if arrow.get(msg.created_at) < five_minutes_ago:
+                continue
+            elif msg.author == self.user:
+                openai_messages += [{'role': 'assistant', 'content': msg.content}]
+            elif self.should_reply_to_message(msg):
+                openai_messages += [{'role': 'user', 'content': msg.content}]
+
+        openai_messages.reverse()
+
+        return openai_messages
 
     def signup_message(self, message: Message) -> str:
         return (

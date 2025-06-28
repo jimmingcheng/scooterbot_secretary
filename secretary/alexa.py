@@ -16,7 +16,8 @@ from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.utils import is_intent_name
 from ask_sdk_core.utils import is_request_type
 
-from secretary.agents.main_agent import get_secretary_agent
+from secretary.agents.base import UserContext
+from secretary.agents.main_agent import SecretaryAgent
 from secretary.database import Channel
 from secretary.database import ChannelTable
 
@@ -32,16 +33,15 @@ class IssuePromptHandler(AbstractRequestHandler):
 
         user = ChannelTable.get(Channel.make_channel_id('alexa', access_token))
 
-        async def run_agent() -> str:
-            async with get_secretary_agent(user.user_id) as agent:
-                result = await Runner().run(
-                    agent,
-                    f"{user_prompt} (reply in natural spoken language)",
-                )
+        result = asyncio.run(
+            Runner().run(
+                SecretaryAgent(user.user_id),
+                f"{user_prompt} (reply in natural spoken language)",
+                context=UserContext(user_id=user.user_id),
+            )
+        )
 
-                return result.final_output
-
-        reply = asyncio.run(run_agent())
+        reply = result.final_output
 
         handler_input.response_builder.speak(reply).set_should_end_session(True)
         return handler_input.response_builder.response

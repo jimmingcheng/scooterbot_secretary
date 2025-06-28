@@ -8,6 +8,7 @@ from boto3.dynamodb.conditions import Key
 
 
 ChannelType = Literal['alexa', 'discord', 'sms']
+LinkableAccountType = Literal['tesla']
 
 
 class UserDataNotFoundError(Exception):
@@ -38,13 +39,6 @@ class Channel:
     @classmethod
     def make_channel_id(cls, channel_type: ChannelType, channel_user_id: str) -> str:
         return f'{channel_type}:{channel_user_id}'
-
-
-@dataclass
-class AccountLink:
-    user_id: str
-    other_account_type: str
-    other_user_id: str
 
 
 class UserTable:
@@ -93,14 +87,6 @@ class ChannelTable:
 
         for item in channels:
             cls.table.delete_item(Key={'channel_id': item['channel_id']})
-
-
-class AccountLinkTable:
-    table = boto3.resource('dynamodb', 'us-west-2').Table('secretary_account_link')
-
-    @classmethod
-    def upsert(cls, account_link: AccountLink) -> None:
-        cls.table.put_item(Item=asdict(account_link))
 
 
 def disconnect_channel(user_id: str) -> None:

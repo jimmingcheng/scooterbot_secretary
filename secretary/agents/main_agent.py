@@ -1,89 +1,96 @@
-from typing import AsyncIterator
+from typing import cast
 
 import textwrap
-from agents import Agent as OpenAIAgent
-from agents.extensions.handoff_prompt import RECOMMENDED_PROMPT_PREFIX
-from agents.mcp import MCPServer
-from agents.mcp import MCPServerStreamableHttp
+
+from agents import function_tool
 from calendar_agent import CalendarAgent
-from contextlib import asynccontextmanager
-from contextlib import AsyncExitStack
 from googleapiclient import discovery
 
-from secretary.google_apis import get_google_apis_creds
+from secretary import config
+from secretary.account_linking import get_account_link_manager
+from secretary.agents.base import BaseSecretaryAgent
+from secretary.agents.base import UserContext
+from secretary.agents.base import UserContextWrapper
+from secretary.clients import tesla_agent
 from secretary.config import google_api_key
+from secretary.google_apis import get_google_apis_creds
 
 
-class SecretaryAgent(OpenAIAgent):
-    def __init__(
-        self,
-        user_id: str,
-        house_mcp_server: MCPServer,
-        tesla_mcp_server: MCPServer,
-        tesla_user_id: str,
-    ) -> None:
+class SecretaryAgent(BaseSecretaryAgent):
+    def __init__(self, user_ctx: UserContext) -> None:
         calendar_agent = CalendarAgent(
-            calsvc=discovery.build('calendar', 'v3', credentials=get_google_apis_creds(user_id)),
+            calsvc=discovery.build('calendar', 'v3', credentials=get_google_apis_creds(user_ctx.user_id)),
             gmaps_api_key=google_api_key(),
         )
+
+        tools = [
+            calendar_agent.as_tool(
+                tool_name='read_and_manage_calendars_with_calendar_agent',
+                tool_description="The Calendar Agent can search and create events across the user's Google Calendars.",
+            ),
+        ]
+
+        if user_ctx.tesla_user_id:
+            tools += [
+                make_request_to_tesla_agent,
+            ]
+        else:
+            tools += [
+                link_account_to_tesla_agent,
+            ]
 
         super().__init__(
             name=self.__class__.__name__,
             model='gpt-4.1',
-            instructions=RECOMMENDED_PROMPT_PREFIX + '\n\n' + textwrap.dedent(
+            instructions=self.agent_app_context() + textwrap.dedent(
                 '''\
+                # Role
+
+                You are the main agent responsible for responding to user requests
+
                 # Instructions
 
-                You are a personal secretary for the user. You have tools to read and manage their:
+                Carry out requests using the provided tools.
 
-                - personal and other calendars
-                - cars via the Tesla API
-                - smart home via an API
+                ## Guidelines
 
-                Use these tools to help the user with their requests. Always use the tools to get
-                the most accurate and up-to-date information. If you cannot complete a task using
-                the tools, ask the user for more information or clarification, or tell them you
-                cannot complete the task. Never just make up information. Only consider a task
-                complete if you get a successful response from the relevant tools.
+                ### Tool Use
 
-                ## tesla_user_id
+                - If request can be fulfilled using a provided tool, you MUST use that tool and
+                  respond according to the tool's output. Never attempt to answer the these these
+                  requests without using the tool.
 
-                {tesla_user_id}
+                - When using tools and delegation, always make a fresh call. Don't assume a call
+                  from a prior conversation turn is still valid.
+
+                - If you cannot complete a task using the tools, ask the user for more information
+                  or clarification, or tell them you cannot complete the task. Never just make up
+                  information.
+
+                - Only consider a task complete if you get a successful response from the relevant
+                  tools.
                 '''
-            ).format(
-                tesla_user_id=tesla_user_id,
             ),
             output_type=str,
-            mcp_servers=[
-                house_mcp_server,
-                tesla_mcp_server,
-            ],
-            tools=[
-                calendar_agent.as_tool(
-                    tool_name='read_and_manage_calendars',
-                    tool_description='Search for or create calendar events.',
-                ),
-            ],
+            tools=tools,
         )
 
 
-@asynccontextmanager
-async def get_secretary_agent(user_id: str) -> AsyncIterator[SecretaryAgent]:
-    async with AsyncExitStack() as stack:
-        mcp_server_configs = [
-            ('house', 'http://house_mcp:9888/mcp'),
-            ('tesla', 'http://tesla_mcp:9888/mcp'),
-        ]
-        mcp_servers = [
-            await stack.enter_async_context(
-                MCPServerStreamableHttp(name=name, params={'url': url})
-            )
-            for name, url in mcp_server_configs
-        ]
+@function_tool
+async def make_request_to_tesla_agent(ctx: UserContextWrapper, request_in_natural_language: str) -> str:
+    """The Tesla Agent can respond to requests about the locations of the user's Tesla vehicles,
+    send navigation requests to them, and more.
+    """
+    user_ctx = cast(UserContext, ctx.context)
 
-        yield SecretaryAgent(
-            user_id=user_id,
-            house_mcp_server=mcp_servers[0],
-            tesla_mcp_server=mcp_servers[1],
-            tesla_user_id='ba813a80-54b6-4ca3-8d55-f964d2145b4b',
-        )
+    assert user_ctx.tesla_user_id
+
+    return await tesla_agent.make_request(user_ctx.tesla_user_id, request_in_natural_language)
+
+
+@function_tool
+async def link_account_to_tesla_agent(ctx: UserContextWrapper) -> str:
+    user_ctx = cast(UserContext, ctx.context)
+    token = get_account_link_manager().make_token('secretary', user_ctx.user_id)
+    url = config.account_linking_tesla_url() + '?a=secretary&u=' + user_ctx.user_id + '&t=' + token
+    return 'To link your Secretary Agent with your Tesla Agent, visit: ' + url

@@ -83,7 +83,7 @@ def step4_calendar_list(request: HttpRequest) -> JsonResponse:
     })
 
 
-def step5(request: HttpRequest) -> HttpResponse:
+async def step5(request: HttpRequest) -> HttpResponse:
     user_id = request.POST['user_id']
     todo_calendar_id = request.POST['todo_calendar_id']
     discord_user_id = request.POST['discord_user_id']
@@ -122,7 +122,7 @@ def step5(request: HttpRequest) -> HttpResponse:
     cal = cal_service.calendars().get(calendarId=todo_calendar_id).execute()
 
     if discord_channel:
-        discord.say(
+        await discord.say(
             f"You're all set <@{discord_user_id}>. "
             f"I'll save your todos in this calendar: {cal['summary']}",
             channel=discord_channel
