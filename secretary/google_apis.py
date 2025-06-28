@@ -22,7 +22,7 @@ def get_client_secret() -> str:
 
 
 @lru_cache(maxsize=1)
-def get_userdb_client(redirect_url: str = REDIRECT_URL) -> OAuthUserDBClient:
+def get_oauth_client(redirect_url: str = REDIRECT_URL) -> OAuthUserDBClient:
     return DynamoDBOAuthUserDBClient(
         client_id=get_client_id(),
         client_secret=get_client_secret(),
@@ -42,7 +42,7 @@ def get_userdb_client(redirect_url: str = REDIRECT_URL) -> OAuthUserDBClient:
 
 
 def get_google_apis_creds(user_id: str) -> OAuth2Credentials:
-    creds = get_userdb_client().get_credentials(user_id)
+    creds = get_oauth_client().get_credentials(user_id)
     return OAuth2Credentials(
         access_token=creds.access_token,
         client_id=get_client_id(),
@@ -51,5 +51,5 @@ def get_google_apis_creds(user_id: str) -> OAuth2Credentials:
         token_expiry=creds.expires_at,
         token_uri=TOKEN_URL,
         user_agent='scooterbot_todo',
-        scopes=get_userdb_client().scope,
+        scopes=get_oauth_client().scope,
     )

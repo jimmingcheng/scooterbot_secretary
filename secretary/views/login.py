@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.http import HttpRequest
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
+from oauth_userdb.client import OAuthUserDBClient
 from urllib.parse import quote
 from urllib.parse import unquote
 from uuid import uuid1
@@ -17,7 +18,19 @@ from secretary.database import Channel
 from secretary.database import ChannelTable
 from secretary.database import User
 from secretary.database import UserTable
-from secretary.google_apis import get_userdb_client
+from secretary.google_apis import get_oauth_client
+
+
+def oauth_client() -> OAuthUserDBClient:
+    return get_oauth_client(
+        redirect_url='https://secretary.scooterbot.ai/login/step3',
+    )
+
+
+def alexa_oauth_client() -> OAuthUserDBClient:
+    return get_oauth_client(
+        redirect_url='https://secretary.scooterbot.ai/login/alexa/step2',
+    )
 
 
 @dataclass
@@ -44,9 +57,7 @@ def step2(request: HttpRequest) -> HttpResponse:
     discord_user_id = request.GET.get('discord_user_id')
     discord_channel = request.GET.get('discord_channel')
 
-    url = get_userdb_client(
-        redirect_url='https://secretary.scooterbot.ai/login/step3',
-    ).get_authorization_url(
+    url = oauth_client().get_authorization_url(
         access_type='offline',
         state=OAuthState(discord_user_id=discord_user_id, discord_channel=discord_channel).pack(),
         prompt='consent',
@@ -58,7 +69,7 @@ def step3(request: HttpRequest) -> HttpResponse:
     code = request.GET['code']
     state = OAuthState.unpack(request.GET['state'])
 
-    user_id = get_userdb_client().save_user_and_credentials(code)
+    user_id = oauth_client().save_user_and_credentials(code)
 
     url = f'https://secretary.scooterbot.ai/login/step4?user_id={user_id}'
     if state.discord_user_id:
@@ -137,9 +148,7 @@ def alexa_step1(request: HttpRequest) -> HttpResponse:
 
     state = _pack_alexa_state(alexa_state, alexa_redirect_uri)
 
-    url = get_userdb_client(
-        redirect_url='https://secretary.scooterbot.ai/login/alexa/step2',
-    ).get_authorization_url(
+    url = alexa_oauth_client().get_authorization_url(
         state=state,
         access_type='offline',
         prompt='consent',
@@ -152,7 +161,7 @@ def alexa_step2(request: HttpRequest) -> HttpResponse:
     code = request.GET['code']
     state = request.GET['state']
 
-    user_id = get_userdb_client().save_user_and_credentials(code)
+    user_id = alexa_oauth_client().save_user_and_credentials(code)
 
     url = _save_alexa_user_and_redirect(user_id, state)
 
