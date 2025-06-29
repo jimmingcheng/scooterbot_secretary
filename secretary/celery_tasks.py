@@ -4,24 +4,19 @@ from typing import Optional
 import aiohttp
 import arrow
 import asyncio
-import staticconf
 from celery import Celery
 from celery.signals import after_setup_logger
 from celery.signals import worker_init
 from dataclasses import dataclass
 
 import secretary
+from secretary.service_config import config
 from secretary.calendar import get_calendar_service
-from secretary.database import ChannelTable
 
 
 REDIS_HOST = 'redis'
 app = Celery('celery_tasks', broker='redis://{}'.format(REDIS_HOST))
 app.conf.task_default_queue = 'scooterbot_secretary_task_queue'
-
-
-def google_apis_api_key() -> str:
-    return staticconf.read('google_apis.api_key', namespace='secretary')  # type: ignore
 
 
 @dataclass
@@ -65,7 +60,10 @@ async def _add_calendar_event(user_id: str, args: AddCalendarEventArgs) -> None:
 
     if args.location:
         async with aiohttp.ClientSession() as session:
-            url = f'https://maps.googleapis.com/maps/api/place/textsearch/json?key={google_apis_api_key()}&query={args.location}'
+            url = 'https://maps.googleapis.com/maps/api/place/textsearch/json?key={api_key}&query={query}'.format(
+                api_key=config.google_apis.api_key,
+                query=args.location,
+            )
 
             async with session.get(url) as resp:
                 resp_data = await resp.json()

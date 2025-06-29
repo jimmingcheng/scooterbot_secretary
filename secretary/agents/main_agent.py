@@ -6,13 +6,12 @@ from agents import function_tool
 from calendar_agent import CalendarAgent
 from googleapiclient import discovery
 
-from secretary import config
+from secretary.service_config import config
 from secretary.account_linking import get_account_link_manager
 from secretary.agents.base import BaseSecretaryAgent
 from secretary.agents.base import UserContext
 from secretary.agents.base import UserContextWrapper
 from secretary.clients import tesla_agent
-from secretary.config import google_api_key
 from secretary.google_apis import get_google_apis_creds
 
 
@@ -20,7 +19,7 @@ class SecretaryAgent(BaseSecretaryAgent):
     def __init__(self, user_ctx: UserContext) -> None:
         calendar_agent = CalendarAgent(
             calsvc=discovery.build('calendar', 'v3', credentials=get_google_apis_creds(user_ctx.user_id)),
-            gmaps_api_key=google_api_key(),
+            gmaps_api_key=config.google_apis.api_key,
         )
 
         tools = [
@@ -108,7 +107,7 @@ async def make_request_to_house_agent(ctx: UserContextWrapper, request_in_natura
 async def link_account_to_tesla_agent(ctx: UserContextWrapper) -> str:
     user_ctx = cast(UserContext, ctx.context)
     token = get_account_link_manager().make_token('secretary', user_ctx.user_id)
-    url = config.account_linking_tesla_url() + '?a=secretary&u=' + user_ctx.user_id + '&t=' + token
+    url = config.account_links.tesla.linking_url + '?a=secretary&u=' + user_ctx.user_id + '&t=' + token
     return 'To link your Secretary Agent with your Tesla Agent, visit: ' + url
 
 
@@ -116,5 +115,5 @@ async def link_account_to_tesla_agent(ctx: UserContextWrapper) -> str:
 async def link_account_to_house_agent(ctx: UserContextWrapper) -> str:
     user_ctx = cast(UserContext, ctx.context)
     token = get_account_link_manager().make_token('secretary', user_ctx.user_id)
-    url = config.account_linking_house_url() + '?a=secretary&u=' + user_ctx.user_id + '&t=' + token
+    url = config.account_links.house.linking_url + '?a=secretary&u=' + user_ctx.user_id + '&t=' + token
     return 'To link your Secretary Agent with your House Agent, visit: ' + url

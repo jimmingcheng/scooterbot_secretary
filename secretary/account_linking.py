@@ -1,8 +1,7 @@
 from scooterbot_account_linking import AccountLinkManager
 
-from secretary import config
+from secretary.service_config import config
 
 
 def get_account_link_manager() -> AccountLinkManager:
-    shared_secret = config.account_linking_shared_secret()
-    return AccountLinkManager(shared_secret, 'secretary')
+    return AccountLinkManager(config.account_links.shared_secret, 'secretary')

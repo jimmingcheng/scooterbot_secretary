@@ -2308,14 +2308,14 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
 name = "openai"
-version = "1.92.2"
+version = "1.93.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "openai-1.92.2-py3-none-any.whl", hash = "sha256:abb64bee7f2571709edf9a856f598ffe871730129a7d807a8a4d8d2958f5c842"},
-    {file = "openai-1.92.2.tar.gz", hash = "sha256:b571a79fc7e165e7d00e6963a8a95eb5f42b60ac89fd316f1dc0a2dac5c6fae1"},
+    {file = "openai-1.93.0-py3-none-any.whl", hash = "sha256:3d746fe5498f0dd72e0d9ab706f26c91c0f646bf7459e5629af8ba7c9dbdf090"},
+    {file = "openai-1.93.0.tar.gz", hash = "sha256:988f31ade95e1ff0585af11cc5a64510225e4f5cd392698c675d0a9265b8e337"},
 ]
 
 [package.dependencies]
@@ -2336,14 +2336,14 @@ voice-helpers = ["numpy (>=2.0.2)", "sounddevice (>=0.5.1)"]
 
 [[package]]
 name = "openai-agents"
-version = "0.0.19"
+version = "0.1.0"
 description = "OpenAI Agents SDK"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "openai_agents-0.0.19-py3-none-any.whl", hash = "sha256:daff03408e3a069e2a04fdf3968296cdc5f63ab635df1d8a54ca2e9352e68516"},
-    {file = "openai_agents-0.0.19.tar.gz", hash = "sha256:4090d683ef7257b3f6299f76e477ad51a970fd76de7c55df65f4bc5029580f2b"},
+    {file = "openai_agents-0.1.0-py3-none-any.whl", hash = "sha256:6a8ef71d3f20aecba0f01bca2e059590d1c23f5adc02d780cb5921ea8a7ca774"},
+    {file = "openai_agents-0.1.0.tar.gz", hash = "sha256:a697a4fdd881a7a16db8c0dcafba0f17d9e90b6236a4b79923bd043b6ae86d80"},
 ]
 
 [package.dependencies]
@@ -2797,24 +2797,6 @@ files = [
 
 [package.extras]
 diagrams = ["jinja2", "railroad-diagrams"]
-
-[[package]]
-name = "pystaticconfiguration"
-version = "0.11.1"
-description = "A python library for loading static configuration"
-optional = false
-python-versions = ">=3.6"
-groups = ["main"]
-files = [
-    {file = "PyStaticConfiguration-0.11.1-py3-none-any.whl", hash = "sha256:b91bb9567ee3d1445cb4a0b47798193e307748a1b0ffa974084e3beeb3cdb1bb"},
-    {file = "PyStaticConfiguration-0.11.1.tar.gz", hash = "sha256:78c370d9196408a1bef24fe173f852688122ec81ae27a087cd78b38439d9e371"},
-]
-
-[package.dependencies]
-typing-extensions = "*"
-
-[package.extras]
-yaml = ["pyyaml"]
 
 [[package]]
 name = "pytest"
@@ -3905,4 +3887,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "c0caa4bdb08691120078cbca3ba973e992712714b4180afae00351352e3fe678"
+content-hash = "4fe9240c3a7b8f8007269c07568728ae78ce9a8eee398cb552b52918cfd90065"

@@ -5,16 +5,17 @@ ENV DEBIAN_FRONTEND noninteractive
 MAINTAINER Jimming Cheng
 
 RUN apt-get update && apt-get install -y \
-    software-properties-common
-
-RUN apt-get update && apt-get install -y \
+    software-properties-common \
     build-essential \
     curl \
-    openssh-client \
+    tzdata
+
+RUN add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y \
     python3.11 \
     python3.11-dev \
-    tzdata \
-    virtualenv
+    python3.11-venv
 
 ENV TZ US/Pacific
 ENV OAUTHLIB_RELAX_TOKEN_SCOPE 1
@@ -26,8 +27,8 @@ COPY ./poetry.lock /app/
 COPY ./pyproject.toml /app/
 
 WORKDIR /app
-RUN virtualenv venv --python=python3.11
-RUN /app/venv/bin/pip install poetry==1.3.2
+RUN python3.11 -m venv /app/venv
+RUN /app/venv/bin/pip install poetry
 RUN . /app/venv/bin/activate && /app/venv/bin/poetry install
 
 RUN groupadd -g 72277 sbapp

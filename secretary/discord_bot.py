@@ -8,7 +8,7 @@ from discord import Message
 
 import secretary
 from secretary.agents.main_agent import SecretaryAgent
-from secretary.config import discord_bot_token
+from secretary.service_config import config
 from secretary.database import UserDataNotFoundError
 from secretary.database import Channel
 from secretary.database import ChannelTable
@@ -91,13 +91,15 @@ class SecretaryDiscordBot(discord.Client):
 
 
 def run():
+    import logging
+    logging.info('Starting Secretary Discord Bot...')
     secretary.init()
 
     intents = discord.Intents.default()
     intents.message_content = True
 
     bot = SecretaryDiscordBot(intents=intents)
-    bot.run(discord_bot_token())
+    bot.run(config.discord.bot_token)
 
 
 if __name__ == '__main__':

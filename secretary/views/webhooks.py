@@ -1,17 +1,13 @@
 import arrow
 import re
 import json
-import staticconf
 from django.http import HttpRequest
 from django.http import HttpResponse
 from django.http import HttpResponseForbidden
 
 
 from secretary import write
-
-
-def _get_token() -> str:
-    return staticconf.read('webhook_token', namespace='secretary')  # type: ignore
+from secretary.service_config import config
 
 
 def _is_authorized(request: HttpRequest) -> bool:
@@ -19,7 +15,7 @@ def _is_authorized(request: HttpRequest) -> bool:
 
     if not m:
         return False
-    elif m[1] == _get_token():
+    elif m[1] == config.webhook_token:
         return True
     else:
         return False

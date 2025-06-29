@@ -2,8 +2,7 @@ import logging
 import schedule
 import time
 
-from secretary import logger
-from secretary.config import load_all_configs
+import secretary
 from secretary.database import UserTable
 from secretary.todo_emailer import get_todos_to_remind_today
 from secretary.todo_emailer import send_email
@@ -27,8 +26,7 @@ def create_schedule():
 
 
 def start():
-    logger.init('secretary_job_scheduler')
-    load_all_configs()
+    secretary.init()
 
     create_schedule()
 
