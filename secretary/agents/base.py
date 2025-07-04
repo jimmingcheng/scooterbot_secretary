@@ -1,6 +1,7 @@
 import textwrap
 from dataclasses import dataclass
 
+import arrow
 from agents import Agent as OpenAIAgent
 from agents import RunContextWrapper
 from agents.extensions.handoff_prompt import RECOMMENDED_PROMPT_PREFIX
@@ -15,7 +16,7 @@ class UserContext:
     house_user_id: str | None = None
 
 
-UserContextWrapper = RunContextWrapper[UserContext]
+UserContextWrapper = RunContextWrapper[UserContext]  # type: ignore
 
 
 class BaseSecretaryAgent(OpenAIAgent):
@@ -39,6 +40,10 @@ class BaseSecretaryAgent(OpenAIAgent):
 
             Scooterbot AI's Secretary Agent is a virtual personal assistant with access to various
             tools linked to the user's personal data and assets.
+
+            # Current Time
+
+            {arrow.now().format()}
 
             '''
         )

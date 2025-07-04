@@ -36,10 +36,9 @@ RUN useradd -ms /bin/bash -g sbapp -u 1001 scooterbot
 USER scooterbot
 
 CMD [ \
-  "/app/venv/bin/uwsgi", \
-  "--socket", "0.0.0.0:8080", \
-  "--http", "0.0.0.0:58080", \
-  "--buffer-size", "8192", \
-  "-p", "25", \
-  "-w", "secretary.wsgi" \
+  "/app/venv/bin/uvicorn", \
+  "secretary.asgi:application", \
+  "--host", "0.0.0.0", \
+  "--port", "8080", \
+  "--workers", "4" \
 ]

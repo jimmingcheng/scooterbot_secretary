@@ -6,7 +6,6 @@ from twilio.twiml.messaging_response import MessagingResponse
 
 from secretary.database import Channel
 from secretary.database import ChannelTable
-from secretary.tasks.calendar import AddCalendarEventFromSMS
 from secretary.tasks.question import AnswerQuestionFromCalendar
 from secretary.tasks.todo import AddTodoFromSMS
 
@@ -19,7 +18,6 @@ def sms_reply(request: HttpRequest) -> HttpResponse:
     reply = asyncio.run(
         TaskDispatcher([
             AnswerQuestionFromCalendar(user_id=user.user_id),
-            AddCalendarEventFromSMS(user_id=user.user_id),
             AddTodoFromSMS(user_id=user.user_id),
         ]).reply(user_prompt)
     )
