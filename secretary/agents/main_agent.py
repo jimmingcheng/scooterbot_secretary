@@ -11,7 +11,8 @@ from secretary.account_linking import get_account_link_manager
 from secretary.agents.base import BaseSecretaryAgent
 from secretary.agents.base import UserContext
 from secretary.agents.base import UserContextWrapper
-from secretary.clients import tesla_agent
+from secretary.agents.house_agent import HouseAgent
+from secretary.agents.tesla_agent import TeslaAgent
 from secretary.google_apis import get_google_apis_creds
 
 
@@ -93,14 +94,18 @@ async def make_request_to_tesla_agent(ctx: UserContextWrapper, request_in_natura
 
     assert user_ctx.tesla_user_id
 
-    return await tesla_agent.make_request(user_ctx.tesla_user_id, request_in_natural_language)
+    return await TeslaAgent(user_ctx.tesla_user_id).make_request(request_in_natural_language)
 
 
 @function_tool
 async def make_request_to_house_agent(ctx: UserContextWrapper, request_in_natural_language: str) -> str:
     """The House Agent can respond to requests about the status of the user's smart home
     """
-    return 'The House Agent is not yet implemented. Please try again later.'
+    user_ctx = cast(UserContext, ctx.context)
+
+    assert user_ctx.house_user_id
+
+    return await HouseAgent(user_ctx.house_user_id).make_request(request_in_natural_language)
 
 
 @function_tool

@@ -27,6 +27,7 @@ class Channel:
     channel_user_id: str
     user_id: str
     channel_id: str | None = None
+    push_enabled: bool = False
 
     def __post_init__(self) -> None:
         channel_id = self.make_channel_id(self.channel_type, self.channel_user_id)

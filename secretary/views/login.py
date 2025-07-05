@@ -13,12 +13,12 @@ from urllib.parse import unquote
 from uuid import uuid1
 
 from secretary.calendar import get_calendar_service
-from secretary.clients import discord
 from secretary.database import Channel
 from secretary.database import ChannelTable
 from secretary.database import User
 from secretary.database import UserTable
 from secretary.google_apis import get_oauth_client
+from secretary.notifications import notify
 
 
 def oauth_client() -> OAuthUserDBClient:
@@ -117,6 +117,7 @@ async def step5(request: HttpRequest) -> HttpResponse:
                 channel_type='discord',
                 channel_user_id=discord_user_id,
                 user_id=user_id,
+                push_enabled=True,
             )
         )
     if sms_number:
@@ -125,6 +126,7 @@ async def step5(request: HttpRequest) -> HttpResponse:
                 channel_type='sms',
                 channel_user_id=sms_number,
                 user_id=user_id,
+                push_enabled=True,
             )
         )
 
@@ -132,14 +134,9 @@ async def step5(request: HttpRequest) -> HttpResponse:
 
     cal = cal_service.calendars().get(calendarId=todo_calendar_id).execute()
 
-    if discord_channel:
-        await discord.say(
-            f"You're all set <@{discord_user_id}>. "
-            f"I'll save your todos in this calendar: {cal['summary']}",
-            user_id=discord_channel
-        )
+    await notify(user_id, "You're all set! I'll save your todos in this calendar: " + cal['summary'])
 
-    return HttpResponse(f"I'll save your todos in this calendar: {cal['summary']}")
+    return HttpResponse("You're all set! I'll save your todos in this calendar: " + cal['summary'])
 
 
 def alexa_step1(request: HttpRequest) -> HttpResponse:
@@ -176,6 +173,7 @@ def _save_alexa_user_and_redirect(user_id: str, state: str) -> str:
         channel_type='alexa',
         channel_user_id=alexa_access_token,
         user_id=user_id,
+        push_enabled=False,
     )
 
     ChannelTable.upsert(channel)
