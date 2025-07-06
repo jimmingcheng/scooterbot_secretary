@@ -86,7 +86,7 @@ class SecretaryDiscordBot(discord.Client):
     def signup_message(self, message: Message) -> str:
         return (
             "Hi! I'm your personal secretary. To get started, link your Google account: "
-            f'https://secretary.scooterbot.ai/login?du={message.author.id}&dch={message.channel.id}'
+            f'https://secretary.scooterbot.ai/setup?du={message.author.id}'
         )
 
 

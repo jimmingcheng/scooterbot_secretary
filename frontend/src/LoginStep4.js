@@ -10,7 +10,6 @@ function LoginStep4() {
   const query = useQuery();
   const discord_user_id = query.get('discord_user_id');
   const user_id = query.get('user_id');
-  const discord_channel = query.get('discord_channel');
 
   const [calendars, setCalendars] = useState([]);
 
@@ -46,7 +45,6 @@ function LoginStep4() {
         </select>
         <input type="hidden" name="user_id" value={user_id || ''} />
         <input type="hidden" name="discord_user_id" value={discord_user_id || ''} />
-        <input type="hidden" name="discord_channel" value={discord_channel || ''} />
 
         <input type="submit" value="Complete Sign Up" />
       </form>

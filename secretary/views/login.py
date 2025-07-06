@@ -36,12 +36,10 @@ def alexa_oauth_client() -> OAuthUserDBClient:
 @dataclass
 class OAuthState:
     discord_user_id: Optional[str]
-    discord_channel: Optional[str]
 
     def pack(self) -> str:
         return quote(json.dumps({
             'discord_user_id': self.discord_user_id,
-            'discord_channel': self.discord_channel,
         }))
 
     @classmethod
@@ -49,17 +47,15 @@ class OAuthState:
         unpacked = json.loads(unquote(state))
         return OAuthState(
             discord_user_id=unpacked['discord_user_id'],
-            discord_channel=unpacked['discord_channel'],
         )
 
 
 def step2(request: HttpRequest) -> HttpResponse:
     discord_user_id = request.GET.get('discord_user_id')
-    discord_channel = request.GET.get('discord_channel')
 
     url = oauth_client().get_authorization_url(
         access_type='offline',
-        state=OAuthState(discord_user_id=discord_user_id, discord_channel=discord_channel).pack(),
+        state=OAuthState(discord_user_id=discord_user_id).pack(),
         prompt='consent',
     )
     return HttpResponseRedirect(url)
@@ -74,8 +70,6 @@ def step3(request: HttpRequest) -> HttpResponse:
     url = f'https://secretary.scooterbot.ai/login/step4?user_id={user_id}'
     if state.discord_user_id:
         url += f'&discord_user_id={state.discord_user_id}'
-    if state.discord_channel:
-        url += f'&discord_channel={state.discord_channel}'
 
     return HttpResponseRedirect(url)
 
@@ -98,7 +92,6 @@ async def step5(request: HttpRequest) -> HttpResponse:
     user_id = request.POST['user_id']
     todo_calendar_id = request.POST['todo_calendar_id']
     discord_user_id = request.POST['discord_user_id']
-    discord_channel = request.POST['discord_channel']
     sms_number = request.POST['sms_number']
 
     cal_service = get_calendar_service(user_id)

@@ -8,8 +8,7 @@ function useQuery() {
 function Login() {
   const query = useQuery();
   const discord_user_id = query.get('du');
-  const discord_channel = query.get('dch');
-
+et
   return (
     <>
       <h1>Connect your Google account</h1>
@@ -42,7 +41,6 @@ function Login() {
 
       <form action="/login/step2" method="GET">
         <input type="hidden" name="discord_user_id" value={discord_user_id || ''} />
-        <input type="hidden" name="discord_channel" value={discord_channel || ''} />
         <button type="submit" class="login">
           <img src={gcal_logo} alt="Google Calendar Logo" />
           Connect Google Calendar

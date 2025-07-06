@@ -8,8 +8,6 @@ from llm_task_handler.handler import OpenAIFunctionTaskHandler
 from llm_task_handler.handler import ProgressMessageFunc
 from llm_task_handler.handler import TaskState
 
-from secretary.database import disconnect_channel
-
 
 class DisconnectAccount(OpenAIFunctionTaskHandler):
     def task_type(self) -> str:
@@ -80,8 +78,6 @@ Detect these types and retain original message order in the resulting array.
 Can you confirm that you want to disconnect your account now?
 '''
         elif cleaned_convo[-3:] == ['A', 'B', 'C']:
-            disconnect_channel(self.user_id)
-
             reply = 'Your account has been disconnected'
         elif cleaned_convo[-3:] == ['A', 'B', 'D']:
             reply = 'Okay, I won\'t disconnect your account.'

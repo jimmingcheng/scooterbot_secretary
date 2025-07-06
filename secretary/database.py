@@ -18,7 +18,7 @@ class UserDataNotFoundError(Exception):
 @dataclass
 class User:
     user_id: str
-    todo_calendar_id: str | None
+    todo_calendar_id: str | None = None
 
 
 @dataclass
@@ -64,6 +64,10 @@ class UserTable:
 class OAuthTable:
     table = boto3.resource('dynamodb', 'us-west-2').Table('secretary_oauth')
 
+    @classmethod
+    def delete(cls, user_id: str) -> None:
+        cls.table.delete_item(Key={'user_id': user_id})
+
 
 class ChannelTable:
     table = boto3.resource('dynamodb', 'us-west-2').Table('secretary_channel')
@@ -97,7 +101,3 @@ class ChannelTable:
 
         for item in channels:
             cls.table.delete_item(Key={'channel_id': item['channel_id']})
-
-
-def disconnect_channel(user_id: str) -> None:
-    pass
