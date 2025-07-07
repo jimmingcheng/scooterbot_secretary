@@ -24,17 +24,12 @@ class SecretaryAgent(BaseSecretaryAgent):
             gmaps_api_key=config.google_apis.api_key,
         )
 
-        todo_agent = TodoAgent(
-            calsvc=discovery.build('calendar', 'v3', credentials=get_google_apis_creds(user_ctx.user_id)),
-            gmaps_api_key=config.google_apis.api_key,
-        )
-
         tools = [
             calendar_agent.as_tool(
                 tool_name='read_and_manage_calendars_with_calendar_agent',
                 tool_description="The Calendar Agent can search and create events across the user's Google Calendars.",
             ),
-            todo_agent.as_tool(
+            TodoAgent(user_ctx).as_tool(
                 tool_name='read_and_manage_todos_with_todo_agent',
                 tool_description="The Todo Agent can search, create, and resolve todos on the user's todo list.",
             ),

@@ -1,8 +1,9 @@
 from typing import Optional
 
-import arrow
-from apiclient import discovery
 from functools import lru_cache
+
+import arrow
+from googleapiclient import discovery
 from pytz import timezone  # type: ignore
 
 from secretary.google_apis import get_google_apis_creds
@@ -11,7 +12,7 @@ from secretary.google_apis import get_google_apis_creds
 TZ = timezone('US/Pacific')
 
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=100)
 def get_calendar_service(user_id: str):
     return discovery.build('calendar', 'v3', credentials=get_google_apis_creds(user_id))
 
