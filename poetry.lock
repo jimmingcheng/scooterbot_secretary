@@ -3125,6 +3125,23 @@ botocore = ">=1.12.36,<2.0a.0"
 crt = ["botocore[crt] (>=1.20.29,<2.0a.0)"]
 
 [[package]]
+name = "sb-service-util"
+version = "1.0.0"
+description = ""
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "sb_service_util-1.0.0-py3-none-any.whl", hash = "sha256:d2e57f19cc4976bd96991a100572d24cbb6c59283775fd3171f94b6be4379616"},
+    {file = "sb_service_util-1.0.0.tar.gz", hash = "sha256:6a3182f3f51886337996742b0430598fd14b8174ae9ba440e2245619532977b6"},
+]
+
+[package.source]
+type = "legacy"
+url = "http://pypi.scooterbot.ai:7974/simple"
+reference = "scooterbot-pypi"
+
+[[package]]
 name = "setuptools"
 version = "75.6.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
@@ -3828,4 +3845,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "5b500b0a8a1bfeb2b54e210931fac3a5ee414dd43b2ea9a7e6b5f204a816e86c"
+content-hash = "fe6afae5b178fc4b4506e4ae1e733a108ad59ee97ec1153ac29eb1995b74de72"

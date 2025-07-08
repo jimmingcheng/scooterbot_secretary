@@ -5,7 +5,7 @@ from typing import Tuple
 
 from secretary.calendar import event_start_time
 from secretary.calendar import get_calendar_service
-from secretary.database import UserTable
+from secretary.data_models import User
 from secretary.todo_emailer import send_email
 from secretary.todo_emailer import should_remind_today
 
@@ -52,7 +52,7 @@ Output only the json.
 
 
 def add_todo(user_id: str, description: str, date: arrow.Arrow) -> Tuple[dict, int]:
-    user = UserTable.get(user_id)
+    user = User.get(user_id)
     calendar_id = user.todo_calendar_id
 
     cal_service = get_calendar_service(user_id)

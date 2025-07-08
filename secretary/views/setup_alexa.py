@@ -7,10 +7,8 @@ from urllib.parse import quote
 from urllib.parse import unquote
 from uuid import uuid1
 
-from secretary.database import Channel
-from secretary.database import ChannelTable
-from secretary.database import User
-from secretary.database import UserTable
+from secretary.data_models import SecretaryChannel
+from secretary.data_models import User
 from secretary.google_apis import get_oauth_client
 
 
@@ -50,15 +48,15 @@ def _save_alexa_user_and_redirect(user_id: str, state: str) -> str:
     alexa_state, alexa_redirect_uri = _unpack_alexa_state(state)
     alexa_access_token = str(uuid1())
 
-    channel = Channel(
+    channel = SecretaryChannel(
         channel_type='alexa',
         channel_user_id=alexa_access_token,
         user_id=user_id,
         push_enabled=False,
     )
 
-    UserTable.upsert(User(user_id=user_id))
-    ChannelTable.upsert(channel)
+    User.upsert(User(user_id=user_id))
+    SecretaryChannel.upsert(channel)
 
     return (
         f'{alexa_redirect_uri}#state={alexa_state}'

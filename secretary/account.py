@@ -1,9 +1,9 @@
-from secretary.database import ChannelTable
-from secretary.database import OAuthTable
-from secretary.database import UserTable
+from secretary.data_models import SecretaryChannel
+from secretary.data_models import SecretaryOAuth
+from secretary.data_models import User
 
 
 def remove_account(user_id: str) -> None:
-    ChannelTable.delete(user_id)
-    UserTable.delete(user_id)
-    OAuthTable.delete(user_id)
+    SecretaryChannel.delete(user_id)
+    User.delete(user_id)
+    SecretaryOAuth.delete(user_id)

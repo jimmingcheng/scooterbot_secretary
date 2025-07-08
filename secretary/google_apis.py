@@ -4,7 +4,7 @@ from oauth2client.client import OAuth2Credentials
 from oauth_userdb.client import OAuthUserDBClient
 from oauth_userdb.dynamodb_client import DynamoDBOAuthUserDBClient
 
-from secretary.database import OAuthTable
+from secretary.data_models import SecretaryOAuth
 from secretary.service_config import config
 
 
@@ -29,7 +29,7 @@ def get_oauth_client(redirect_url: str = REDIRECT_URL) -> OAuthUserDBClient:
             'https://www.googleapis.com/auth/userinfo.email',
             'https://www.googleapis.com/auth/calendar',
         ],
-        dynamodb_table=OAuthTable.table,
+        dynamodb_table=SecretaryOAuth.table(),
     )
 
 

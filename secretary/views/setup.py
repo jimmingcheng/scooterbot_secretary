@@ -9,10 +9,8 @@ from oauth_userdb.client import OAuthUserDBClient
 from urllib.parse import quote
 from urllib.parse import unquote
 
-from secretary.database import Channel
-from secretary.database import ChannelTable
-from secretary.database import User
-from secretary.database import UserTable
+from secretary.data_models import SecretaryChannel
+from secretary.data_models import User
 from secretary.google_apis import get_oauth_client
 from secretary.notifications import notify
 
@@ -64,11 +62,11 @@ async def step2(request: HttpRequest) -> HttpResponse:
 
     user_id = oauth_client().save_user_and_credentials(code)
 
-    UserTable.upsert(User(user_id=user_id))
+    User.upsert(User(user_id=user_id))
 
     if state.discord_user_id:
-        ChannelTable.upsert(
-            Channel(
+        SecretaryChannel.upsert(
+            SecretaryChannel(
                 channel_type='discord',
                 channel_user_id=state.discord_user_id,
                 user_id=user_id,
@@ -76,8 +74,8 @@ async def step2(request: HttpRequest) -> HttpResponse:
             )
         )
     if state.sms_number:
-        ChannelTable.upsert(
-            Channel(
+        SecretaryChannel.upsert(
+            SecretaryChannel(
                 channel_type='sms',
                 channel_user_id=state.sms_number,
                 user_id=user_id,

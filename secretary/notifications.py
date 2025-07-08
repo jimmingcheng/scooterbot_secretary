@@ -1,9 +1,9 @@
 import httpx
 
+from sb_service_util.data_models.channel import ChannelType
+
 from secretary.service_config import config
-from secretary.database import Channel
-from secretary.database import ChannelTable
-from secretary.database import ChannelType
+from secretary.data_models import SecretaryChannel
 
 
 async def notify(user_id: str, message: str, channel_type: ChannelType | None = None) -> None:
@@ -40,8 +40,8 @@ async def discord_notify(discord_user_id: str, message: str) -> None:
         )
 
 
-def get_channels_to_notify(user_id: str) -> list[Channel]:
+def get_channels_to_notify(user_id: str) -> list[SecretaryChannel]:
     return [
-        ch for ch in ChannelTable.get_channels_for_user_id(user_id)
+        ch for ch in SecretaryChannel.get_channels_for_user_id(user_id)
         if ch.push_enabled
     ]

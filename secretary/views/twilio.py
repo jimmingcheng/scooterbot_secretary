@@ -4,8 +4,7 @@ from django.http import HttpResponse
 from llm_task_handler.dispatch import TaskDispatcher
 from twilio.twiml.messaging_response import MessagingResponse
 
-from secretary.database import Channel
-from secretary.database import ChannelTable
+from secretary.data_models import SecretaryChannel
 from secretary.tasks.question import AnswerQuestionFromCalendar
 from secretary.tasks.todo import AddTodoFromSMS
 
@@ -14,7 +13,7 @@ def sms_reply(request: HttpRequest) -> HttpResponse:
     sms_number = request.POST.get('From')
     user_prompt = request.POST.get('Body')
 
-    user = ChannelTable.get(Channel.make_channel_id('sms', sms_number))
+    user = SecretaryChannel.get(SecretaryChannel.make_channel_id('sms', sms_number))
     reply = asyncio.run(
         TaskDispatcher([
             AnswerQuestionFromCalendar(user_id=user.user_id),

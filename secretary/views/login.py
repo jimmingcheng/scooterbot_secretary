@@ -13,10 +13,8 @@ from urllib.parse import unquote
 from uuid import uuid1
 
 from secretary.calendar import get_calendar_service
-from secretary.database import Channel
-from secretary.database import ChannelTable
-from secretary.database import User
-from secretary.database import UserTable
+from secretary.data_models import SecretaryChannel
+from secretary.data_models import User
 from secretary.google_apis import get_oauth_client
 from secretary.notifications import notify
 
@@ -105,8 +103,8 @@ async def step5(request: HttpRequest) -> HttpResponse:
         todo_calendar_id = cal['id']
 
     if discord_user_id:
-        ChannelTable.upsert(
-            Channel(
+        SecretaryChannel.upsert(
+            SecretaryChannel(
                 channel_type='discord',
                 channel_user_id=discord_user_id,
                 user_id=user_id,
@@ -114,8 +112,8 @@ async def step5(request: HttpRequest) -> HttpResponse:
             )
         )
     if sms_number:
-        ChannelTable.upsert(
-            Channel(
+        SecretaryChannel.upsert(
+            SecretaryChannel(
                 channel_type='sms',
                 channel_user_id=sms_number,
                 user_id=user_id,
@@ -123,7 +121,7 @@ async def step5(request: HttpRequest) -> HttpResponse:
             )
         )
 
-    UserTable.upsert(User(user_id=user_id, todo_calendar_id=todo_calendar_id))
+    User.upsert(User(user_id=user_id))
 
     cal = cal_service.calendars().get(calendarId=todo_calendar_id).execute()
 
@@ -162,15 +160,15 @@ def _save_alexa_user_and_redirect(user_id: str, state: str) -> str:
     alexa_state, alexa_redirect_uri = _unpack_alexa_state(state)
     alexa_access_token = str(uuid1())
 
-    channel = Channel(
+    channel = SecretaryChannel(
         channel_type='alexa',
         channel_user_id=alexa_access_token,
         user_id=user_id,
         push_enabled=False,
     )
 
-    ChannelTable.upsert(channel)
-    UserTable.upsert(User(user_id=user_id, todo_calendar_id='qrvfc4qvfm5d2kh0m6g9euo4s8@group.calendar.google.com'))
+    SecretaryChannel.upsert(channel)
+    User.upsert(User(user_id=user_id))
 
     return (
         f'{alexa_redirect_uri}#state={alexa_state}'

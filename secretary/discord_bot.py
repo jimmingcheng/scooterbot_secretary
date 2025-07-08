@@ -5,13 +5,12 @@ import discord
 from agents import Runner
 from discord import ChannelType
 from discord import Message
+from sb_service_util.errors import UserDataNotFoundError
 
 import secretary
 from secretary.agents.main_agent import SecretaryAgent
 from secretary.service_config import config
-from secretary.database import UserDataNotFoundError
-from secretary.database import Channel
-from secretary.database import ChannelTable
+from secretary.data_models import SecretaryChannel
 
 
 class SecretaryDiscordBot(discord.Client):
@@ -32,11 +31,11 @@ class SecretaryDiscordBot(discord.Client):
         ]
 
         try:
-            ChannelTable.get(Channel.make_channel_id('discord', str(message.author.id)))
+            SecretaryChannel.get(SecretaryChannel.make_channel_id('discord', str(message.author.id)))
         except UserDataNotFoundError:
             return self.signup_message(message)
 
-        sb_user = ChannelTable.get(Channel.make_channel_id('discord', str(message.author.id)))
+        sb_user = SecretaryChannel.get(SecretaryChannel.make_channel_id('discord', str(message.author.id)))
         user_ctx = SecretaryAgent.get_user_context(sb_user.user_id)
 
         result = await Runner().run(

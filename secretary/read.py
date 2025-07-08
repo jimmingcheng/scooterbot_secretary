@@ -4,7 +4,6 @@ from typing import List
 from typing import Optional
 
 from secretary.calendar import get_calendar_service
-from secretary.database import UserTable
 from secretary.calendar import TZ
 
 
@@ -15,11 +14,8 @@ class Todo:
 
 
 def get_todos(user_id: str, start_date: arrow.Arrow, end_date: arrow.Arrow) -> List[Todo]:
-    user = UserTable.get(user_id)
-    todo_calendar_id = user.todo_calendar_id
-
     resp = get_calendar_service(user_id).events().list(
-        calendarId=todo_calendar_id,
+        calendarId='primary',
         timeMin=start_date.isoformat(),
         timeMax=end_date.isoformat(),
         singleEvents=True,
