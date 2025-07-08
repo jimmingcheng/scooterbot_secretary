@@ -16,7 +16,6 @@ from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.utils import is_intent_name
 from ask_sdk_core.utils import is_request_type
 
-from secretary.agents.base import UserContext
 from secretary.agents.main_agent import SecretaryAgent
 from secretary.data_models import Channel
 
@@ -30,13 +29,15 @@ class IssuePromptHandler(AbstractRequestHandler):
         intent = handler_input.request_envelope.request.intent  # type: ignore
         user_prompt = intent.slots['Prompt'].value  # type: ignore
 
-        user = Channel.get('alexa', access_token)
+        user_ctx = SecretaryAgent.get_user_context(
+            Channel.get('alexa', access_token).user_id
+        )
 
         result = asyncio.run(
             Runner().run(
-                SecretaryAgent(user.user_id),
+                SecretaryAgent(user_ctx),
                 f"{user_prompt} (reply in natural spoken language)",
-                context=UserContext(user_id=user.user_id),
+                context=user_ctx,
             )
         )
 

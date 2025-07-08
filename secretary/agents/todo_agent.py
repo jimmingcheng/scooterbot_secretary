@@ -52,7 +52,7 @@ class TodoAgent(OpenAIAgent):
                 {current_time}
                 '''
             ).format(
-                current_time=arrow.now(user_tz).format('YYYY-MM-DDTHH:mm:ssZZ'),
+                current_time=arrow.now(user_tz).isoformat()
             ),
             output_type=str,
             tools=[

@@ -45,7 +45,7 @@ class CalendarAgent(OpenAIAgent):
                 '''\
                 # Instructions
 
-                Use the provided tools to interact with the Google Calendar API.
+                Use the provided tools to interact with the user's Google Calendars.
 
                 ## Searching For Events
 
@@ -80,7 +80,7 @@ class CalendarAgent(OpenAIAgent):
                 {calendar_names_and_ids}
                 '''
             ).format(
-                current_time=arrow.now(user_tz).format('YYYY-MM-DDTHH:mm:ssZZ'),
+                current_time=arrow.now(user_tz).isoformat(),
                 calendar_names_and_ids=calendar_names_and_ids,
             ),
             output_type=str,
@@ -117,11 +117,11 @@ class EventsResult(BaseModel):
 async def list_events(
     ctx: UserContextWrapper,
     calendar_id: str,
-    time_min: str | None,
-    time_max: str | None,
+    time_min: str,
+    time_max: str,
 ) -> EventsResult:
     """
-    time_min, time_max: format should be YYYY-MM-DDTHH:mm:ssZZ
+    time_min, time_max: format should be RFC3339 (YYYY-MM-DDTHH:mm:ssZZ)
     """
     calsvc = get_calendar_service(cast(UserContext, ctx.context).user_id)
 
