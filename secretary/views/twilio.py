@@ -1,27 +1,6 @@
-import asyncio
-from django.http import HttpRequest
 from django.http import HttpResponse
-from llm_task_handler.dispatch import TaskDispatcher
-from twilio.twiml.messaging_response import MessagingResponse
-
-from secretary.data_models import Channel
-from secretary.tasks.question import AnswerQuestionFromCalendar
-from secretary.tasks.todo import AddTodoFromSMS
 
 
-def sms_reply(request: HttpRequest) -> HttpResponse:
-    sms_number = request.POST.get('From')
-    user_prompt = request.POST.get('Body')
-
-    user = Channel.get('sms', sms_number)
-    reply = asyncio.run(
-        TaskDispatcher([
-            AnswerQuestionFromCalendar(user_id=user.user_id),
-            AddTodoFromSMS(user_id=user.user_id),
-        ]).reply(user_prompt)
-    )
-
-    response = MessagingResponse()
-    response.message(reply)
-
-    return HttpResponse(str(response))
+def sms_reply(request) -> HttpResponse:
+    """SMS endpoint not yet migrated to the new openai-agents framework."""
+    return HttpResponse("Not implemented", status=501)
