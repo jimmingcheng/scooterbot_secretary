@@ -3,9 +3,7 @@ from typing import cast
 import textwrap
 
 from agents import function_tool
-from googleapiclient import discovery
 
-from secretary.service_config import config
 from secretary.agents.account_administration_agent import AccountAdministrationAgent
 from secretary.agents.base import BaseSecretaryAgent
 from secretary.agents.base import UserContext
@@ -14,18 +12,12 @@ from secretary.agents.calendar_agent import CalendarAgent
 from secretary.agents.house_agent import HouseAgent
 from secretary.agents.tesla_agent import TeslaAgent
 from secretary.agents.todo_agent import TodoAgent
-from secretary.google_apis import get_google_apis_creds
 
 
 class SecretaryAgent(BaseSecretaryAgent):
     def __init__(self, user_ctx: UserContext) -> None:
-        calendar_agent = CalendarAgent(
-            calsvc=discovery.build('calendar', 'v3', credentials=get_google_apis_creds(user_ctx.user_id)),
-            gmaps_api_key=config.google_apis.api_key,
-        )
-
         tools = [
-            calendar_agent.as_tool(
+            CalendarAgent(user_ctx).as_tool(
                 tool_name='read_and_manage_calendars_with_calendar_agent',
                 tool_description="The Calendar Agent can search and create events across the user's Google Calendars.",
             ),

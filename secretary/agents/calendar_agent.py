@@ -1,26 +1,31 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import cast
 
 import arrow
 import googlemaps
 import textwrap
 import yaml
 from agents import Agent as OpenAIAgent
-from agents import FunctionTool
 from agents import function_tool
 from agents.extensions.handoff_prompt import RECOMMENDED_PROMPT_PREFIX
-from googleapiclient.discovery import Resource
+from pydantic import BaseModel
+
+from secretary.agents.base import UserContext
+from secretary.agents.base import UserContextWrapper
+from secretary.calendar import get_calendar_service
+from secretary.data_models import Event
+from secretary.service_config import config
 
 
 class CalendarAgent(OpenAIAgent):
     def __init__(
         self,
-        calsvc: Resource,
-        gmaps_api_key: str,
+        user_ctx: UserContext,
         model: str = 'gpt-4.1-mini',
     ) -> None:
-        calendar_time_zone = calsvc.settings().get(setting='timezone').execute().get('value')
+        calsvc = get_calendar_service(user_ctx.user_id)
+        user_tz = calsvc.settings().get(setting='timezone').execute().get('value')
 
         calendar_names_and_ids = yaml.dump(
             [
@@ -66,23 +71,22 @@ class CalendarAgent(OpenAIAgent):
                 - by default, create all events in the primary calendar only
                 - only create events in other calendars if the user explicitly specifies it
 
-                # Current Time
+                # Current Time & Time Zone
 
-                {current_time} ({time_zone})
+                {current_time}
 
                 ## Available Calendars
 
                 {calendar_names_and_ids}
                 '''
             ).format(
-                current_time=arrow.now(calendar_time_zone).format('YYYY-MM-DDTHH:mm:ssZZ'),
-                time_zone=calendar_time_zone,
+                current_time=arrow.now(user_tz).format('YYYY-MM-DDTHH:mm:ssZZ'),
                 calendar_names_and_ids=calendar_names_and_ids,
             ),
             output_type=str,
             tools=[
-                search_events_wrapper(calsvc),  # type: ignore
-                create_event_wrapper(calsvc, gmaps_api_key),  # type: ignore
+                list_events,
+                create_event,
             ],
         )
 
@@ -104,84 +108,88 @@ class CalendarAgent(OpenAIAgent):
         return simplified
 
 
-def search_events_wrapper(cal: Resource) -> FunctionTool:
-    @function_tool
-    async def search_events(
-        calendar_id: str,
-        time_min: str | None,
-        time_max: str | None,
-    ) -> str:
-        """
-        time_min, time_max: format should be YYYY-MM-DDTHH:mm:ssZZ
-        """
-        events_result = cal.events().list(
-            calendarId=calendar_id,
-            timeMin=time_min,
-            timeMax=time_max,
-            maxResults=1001,
-            singleEvents=True,
-            orderBy='startTime',
-        ).execute()
-
-        events = [
-            CalendarAgent.simplify_event_dict(event)
-            for event in events_result.get('items', [])
-        ]
-
-        if len(events) > 1000:
-            return 'Too many events. Narrow the time range and try again.'
-
-        return yaml.dump(events)
-
-    return search_events
+class EventsResult(BaseModel):
+    events: list[Event]
+    error_message: str | None = None
 
 
-def create_event_wrapper(cal: Resource, gmaps_api_key: str) -> FunctionTool:
-    @function_tool
-    async def create_event(
-        calendar_id: str,
-        summary: str,
-        description: str | None,
-        location: str | None,
-        start: str | None,
-        end: str | None,
-        is_all_day_event: bool,
-    ) -> str:
-        """
-        start, end: format should be YYYY-MM-DDTHH:mm:ssZZ
-        location: look up and append address to location
+@function_tool
+async def list_events(
+    ctx: UserContextWrapper,
+    calendar_id: str,
+    time_min: str | None,
+    time_max: str | None,
+) -> EventsResult:
+    """
+    time_min, time_max: format should be YYYY-MM-DDTHH:mm:ssZZ
+    """
+    calsvc = get_calendar_service(cast(UserContext, ctx.context).user_id)
 
-        - if start and end are both not provided, assume all day event
-        - if start is provided and end is not, assume 1 hour duration
-        """
-        event: dict[str, Any] = {}
-        if summary:
-            event['summary'] = summary
-        if description:
-            event['description'] = description
-        if location:
-            gmaps = googlemaps.Client(key=gmaps_api_key)
-            places = gmaps.places(query=location)['results']
-            if len(places) == 1:
-                event['location'] = location + ' ' + places[0]['formatted_address']
-            else:
-                event['location'] = location
-        if start:
-            if is_all_day_event:
-                event['start'] = {'date': arrow.get(start).format('YYYY-MM-DD')}
-            else:
-                event['start'] = {'dateTime': arrow.get(start).format('YYYY-MM-DDTHH:mm:ssZZ')}
-        if end:
-            if is_all_day_event:
-                event['end'] = {'date': arrow.get(end).format('YYYY-MM-DD')}
-            else:
-                event['end'] = {'dateTime': arrow.get(end).format('YYYY-MM-DDTHH:mm:ssZZ')}
+    max_results = 1001
 
-        saved_event = cal.events().insert(
-            calendarId=calendar_id,
-            body=event,
-        ).execute()
+    event_dicts = calsvc.events().list(
+        calendarId=calendar_id,
+        timeMin=time_min,
+        timeMax=time_max,
+        maxResults=max_results,
+        singleEvents=True,
+        orderBy='startTime',
+    ).execute().get('items', [])
 
-        return yaml.dump(CalendarAgent.simplify_event_dict(saved_event))
+    if len(event_dicts) >= max_results:
+        return EventsResult(events=[], error_message='Too many events found. Narrow the time range and try again.')
 
-    return create_event
+    events = [
+        Event.from_gcal_event(d)
+        for d in event_dicts
+        if d.get('extendedProperties', {}).get('shared', {}).get('sb_type') != 'todo'
+    ]
+
+    return EventsResult(events=events, error_message=None)
+
+
+@function_tool
+async def create_event(
+    ctx: UserContextWrapper,
+    calendar_id: str,
+    summary: str,
+    start: str,
+    end: str,
+    location: str | None,
+    is_all_day_event: bool,
+) -> str:
+    """
+    start, end: format should be RFC3339 (YYYY-MM-DDTHH:mm:ssZZ)
+    location: look up and append address to location
+
+    - if start and end are both not provided, assume all day event
+    - if start is provided and end is not, assume 1 hour duration
+    """
+    calsvc = get_calendar_service(cast(UserContext, ctx.context).user_id)
+
+    if location:
+        gmaps = googlemaps.Client(key=config.google_apis.api_key)
+        places = gmaps.places(query=location)['results']
+        if len(places) == 1:
+            location += ' ' + places[0]['formatted_address']
+
+    if is_all_day_event:
+        start = arrow.get(start).format('YYYY-MM-DD')
+        end = arrow.get(end).format('YYYY-MM-DD')
+    else:
+        start = arrow.get(start).isoformat()
+        end = arrow.get(end).isoformat()
+
+    event = Event(
+        summary=summary,
+        start=start,
+        end=end,
+        location=location,
+    )
+
+    calsvc.events().insert(
+        calendarId=calendar_id,
+        body=event.to_gcal_event(),
+    ).execute()
+
+    return 'Successfully created event'

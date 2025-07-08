@@ -75,29 +75,31 @@ async def list_todos(
     """
     due_date_min, due_date_max: format should be YYYY-MM-DD
     """
-    cal = get_calendar_service(cast(UserContext, ctx.context).user_id)
+    calsvc = get_calendar_service(cast(UserContext, ctx.context).user_id)
 
-    user_tz = cal.settings().get(setting='timezone').execute().get('value')
+    user_tz = calsvc.settings().get(setting='timezone').execute().get('value')
     time_min = arrow.get(due_date_min).floor('day').replace(tzinfo=user_tz).isoformat()
     time_max = arrow.get(due_date_max).ceil('day').replace(tzinfo=user_tz).isoformat()
 
-    events_result = cal.events().list(
+    max_results = 1001
+
+    event_dicts = calsvc.events().list(
         calendarId='primary',
         timeMin=time_min,
         timeMax=time_max,
-        maxResults=1001,
+        maxResults=max_results,
         singleEvents=True,
         orderBy='startTime',
         sharedExtendedProperty='sb_type=todo',
-    ).execute()
+    ).execute().get('items', [])
+
+    if len(event_dicts) >= max_results:
+        return TodosResult(todos=[], error_message='Too many todos found. Narrow the time range and try again.')
 
     todos = [
-        Todo.from_gcal_event(event)
-        for event in events_result.get('items', [])
+        Todo.from_gcal_event(d)
+        for d in event_dicts
     ]
-
-    if len(todos) > 1000:
-        return TodosResult(todos=[], error_message='Too many todos found. Narrow the time range and try again.')
 
     return TodosResult(todos=todos, error_message=None)
 
@@ -114,7 +116,7 @@ async def create_todo(
     due_date: format should be YYYY-MM-DD
     location: look up and append address to location
     """
-    cal = get_calendar_service(cast(UserContext, ctx.context).user_id)
+    calsvc = get_calendar_service(cast(UserContext, ctx.context).user_id)
 
     if location:
         gmaps = googlemaps.Client(key=config.google_apis.api_key)
@@ -129,7 +131,7 @@ async def create_todo(
         location=location,
     )
 
-    cal.events().insert(
+    calsvc.events().insert(
         calendarId='primary',
         body=todo.to_gcal_event(),
     ).execute()
@@ -139,15 +141,15 @@ async def create_todo(
 
 @function_tool
 async def resolve_todo(ctx: UserContextWrapper, todo_id: str) -> str:
-    cal = get_calendar_service(cast(UserContext, ctx.context).user_id)
-    todo = Todo.get(cal, todo_id)
+    calsvc = get_calendar_service(cast(UserContext, ctx.context).user_id)
+    todo = Todo.get(calsvc, todo_id)
 
     if todo.is_resolved:
         return 'This todo is already resolved.'
 
     todo.resolve()
 
-    cal.events().patch(
+    calsvc.events().patch(
         calendarId='primary',
         eventId=todo_id,
         body=todo.to_gcal_event(),
@@ -158,15 +160,15 @@ async def resolve_todo(ctx: UserContextWrapper, todo_id: str) -> str:
 
 @function_tool
 async def unresolve_todo(ctx: UserContextWrapper, todo_id: str) -> str:
-    cal = get_calendar_service(cast(UserContext, ctx.context).user_id)
-    todo = Todo.get(cal, todo_id)
+    calsvc = get_calendar_service(cast(UserContext, ctx.context).user_id)
+    todo = Todo.get(calsvc, todo_id)
 
     if not todo.is_resolved:
         return 'This todo was not resolved to begin with.'
 
     todo.unresolve()
 
-    cal.events().patch(
+    calsvc.events().patch(
         calendarId='primary',
         eventId=todo_id,
         body=todo.to_gcal_event(),
@@ -187,9 +189,8 @@ async def update_todo(
 
     new_due_date: format should be YYYY-MM-DD
     """
-    cal = get_calendar_service(cast(UserContext, ctx.context).user_id)
-
-    todo = Todo.get(cal, todo_id)
+    calsvc = get_calendar_service(cast(UserContext, ctx.context).user_id)
+    todo = Todo.get(calsvc, todo_id)
 
     log_msgs = []
 
@@ -205,7 +206,7 @@ async def update_todo(
 
     todo.log_to_description(log_msg)
 
-    cal.events().patch(
+    calsvc.events().patch(
         calendarId='primary',
         eventId=todo_id,
         body=todo.to_gcal_event(),
@@ -216,9 +217,9 @@ async def update_todo(
 
 @function_tool
 async def delete_todo(ctx: UserContextWrapper, todo_id: str) -> str:
-    cal = get_calendar_service(cast(UserContext, ctx.context).user_id)
+    calsvc = get_calendar_service(cast(UserContext, ctx.context).user_id)
 
-    cal.events().delete(
+    calsvc.events().delete(
         calendarId='primary',
         eventId=todo_id,
     ).execute()
