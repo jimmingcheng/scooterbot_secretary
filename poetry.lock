@@ -2793,19 +2793,15 @@ crt = ["botocore[crt] (>=1.37.4,<2.0a.0)"]
 
 [[package]]
 name = "sb-service-util"
-version = "2.0.0"
-description = "Scooterbot Service Util"
+version = "2.0.1"
+description = ""
 optional = false
-python-versions = ">=3.11,<4.0"
+python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "sb_service_util-2.0.0-py3-none-any.whl", hash = "sha256:5c2f683d9d6faf5b6db85e0251c46bcf37b0f915f897ec53088a8429a2688238"},
-    {file = "sb_service_util-2.0.0.tar.gz", hash = "sha256:5bc382d66eec5b69bedab4ae2efee4ea6e53b0037577a71407df2b484bb5a24c"},
+    {file = "sb_service_util-2.0.1-py3-none-any.whl", hash = "sha256:3881e50cf7bf3bbbbe455caf2e8684e60a83a18adf7b2d1b48c4cc2971a0207b"},
+    {file = "sb_service_util-2.0.1.tar.gz", hash = "sha256:3b69153c2825e86666e8bd56e210dc9bfa1d7b1a2be5f69f2bf692e58c47cae0"},
 ]
-
-[package.dependencies]
-boto3 = ">=1.39.3,<2"
-pydantic = ">=2.11.7,<3"
 
 [package.source]
 type = "legacy"
@@ -3398,4 +3394,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "23ad145849190648d589e64156c39e9ff5e82bea9b478708eaa4c7414465b98a"
+content-hash = "06b44ae121d0725c94af3fd64405541f202d5038dbe9d95dc65f996e44478a45"

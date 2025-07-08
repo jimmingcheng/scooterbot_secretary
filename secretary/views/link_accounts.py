@@ -2,8 +2,7 @@ from django.http import HttpRequest
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from oauth_userdb.client import OAuthUserDBClient
-from scooterbot_account_linking import AccountLinkRequest
-from scooterbot_account_linking import TokenInvalidOrExpiredError
+from sb_service_util.account_links import AccountLinkRequest
 
 from secretary.account_linking import get_account_link_manager
 from secretary.google_apis import get_oauth_client
@@ -44,5 +43,5 @@ def step2(request: HttpRequest) -> HttpResponse:
     try:
         get_account_link_manager().process_link_request(user_id, link_request)
         return HttpResponse('Accounts linked successfully')
-    except TokenInvalidOrExpiredError:
+    except Exception:
         return HttpResponse('Token is invalid or expired')

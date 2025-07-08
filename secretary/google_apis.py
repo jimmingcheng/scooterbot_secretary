@@ -28,6 +28,7 @@ def get_oauth_client(redirect_url: str = REDIRECT_URL) -> OAuthUserDBClient:
             'https://www.googleapis.com/auth/userinfo.profile',
             'https://www.googleapis.com/auth/userinfo.email',
             'https://www.googleapis.com/auth/calendar',
+            'https://www.googleapis.com/auth/gmail.modify',
         ],
         dynamodb_table=SecretaryOAuth.table(),
     )
@@ -42,6 +43,6 @@ def get_google_apis_creds(user_id: str) -> OAuth2Credentials:
         refresh_token=creds.refresh_token,
         token_expiry=creds.expires_at,
         token_uri=TOKEN_URL,
-        user_agent='scooterbot_todo',
+        user_agent='scooterbot_secretary',
         scopes=get_oauth_client().scope,
     )

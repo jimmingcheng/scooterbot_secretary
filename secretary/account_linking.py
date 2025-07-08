@@ -1,4 +1,4 @@
-from scooterbot_account_linking import AccountLinkManager
+from sb_service_util.account_links import AccountLinkManager
 
 from secretary.service_config import config
 
