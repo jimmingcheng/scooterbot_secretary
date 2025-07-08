@@ -13,7 +13,7 @@ from urllib.parse import unquote
 from uuid import uuid1
 
 from secretary.calendar import get_calendar_service
-from secretary.data_models import SecretaryChannel
+from secretary.data_models import Channel
 from secretary.data_models import User
 from secretary.google_apis import get_oauth_client
 from secretary.notifications import notify
@@ -103,8 +103,8 @@ async def step5(request: HttpRequest) -> HttpResponse:
         todo_calendar_id = cal['id']
 
     if discord_user_id:
-        SecretaryChannel.upsert(
-            SecretaryChannel(
+        Channel.upsert(
+            Channel(
                 channel_type='discord',
                 channel_user_id=discord_user_id,
                 user_id=user_id,
@@ -112,8 +112,8 @@ async def step5(request: HttpRequest) -> HttpResponse:
             )
         )
     if sms_number:
-        SecretaryChannel.upsert(
-            SecretaryChannel(
+        Channel.upsert(
+            Channel(
                 channel_type='sms',
                 channel_user_id=sms_number,
                 user_id=user_id,
@@ -160,14 +160,14 @@ def _save_alexa_user_and_redirect(user_id: str, state: str) -> str:
     alexa_state, alexa_redirect_uri = _unpack_alexa_state(state)
     alexa_access_token = str(uuid1())
 
-    channel = SecretaryChannel(
+    channel = Channel(
         channel_type='alexa',
         channel_user_id=alexa_access_token,
         user_id=user_id,
         push_enabled=False,
     )
 
-    SecretaryChannel.upsert(channel)
+    Channel.upsert(channel)
     User.upsert(User(user_id=user_id))
 
     return (

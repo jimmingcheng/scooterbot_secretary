@@ -18,7 +18,7 @@ from ask_sdk_core.utils import is_request_type
 
 from secretary.agents.base import UserContext
 from secretary.agents.main_agent import SecretaryAgent
-from secretary.data_models import SecretaryChannel
+from secretary.data_models import Channel
 
 
 class IssuePromptHandler(AbstractRequestHandler):
@@ -30,7 +30,7 @@ class IssuePromptHandler(AbstractRequestHandler):
         intent = handler_input.request_envelope.request.intent  # type: ignore
         user_prompt = intent.slots['Prompt'].value  # type: ignore
 
-        user = SecretaryChannel.get(SecretaryChannel.make_channel_id('alexa', access_token))
+        user = Channel.get('alexa', access_token)
 
         result = asyncio.run(
             Runner().run(

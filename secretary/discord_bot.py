@@ -10,7 +10,7 @@ from sb_service_util.errors import UserDataNotFoundError
 import secretary
 from secretary.agents.main_agent import SecretaryAgent
 from secretary.service_config import config
-from secretary.data_models import SecretaryChannel
+from secretary.data_models import Channel
 
 
 class SecretaryDiscordBot(discord.Client):
@@ -31,12 +31,11 @@ class SecretaryDiscordBot(discord.Client):
         ]
 
         try:
-            SecretaryChannel.get(SecretaryChannel.make_channel_id('discord', str(message.author.id)))
+            sb_user_id = Channel.get('discord', str(message.author.id)).user_id
         except UserDataNotFoundError:
             return self.signup_message(message)
 
-        sb_user = SecretaryChannel.get(SecretaryChannel.make_channel_id('discord', str(message.author.id)))
-        user_ctx = SecretaryAgent.get_user_context(sb_user.user_id)
+        user_ctx = SecretaryAgent.get_user_context(sb_user_id)
 
         result = await Runner().run(
             SecretaryAgent(user_ctx),

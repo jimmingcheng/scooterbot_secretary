@@ -2,7 +2,7 @@ import httpx
 
 
 from secretary.service_config import config
-from secretary.data_models import SecretaryChannel
+from secretary.data_models import Channel
 
 
 async def say(
@@ -10,7 +10,7 @@ async def say(
     user_id: str,
 ) -> None:
     discord_user_id = None
-    for channel in SecretaryChannel.get_channels_for_user_id(user_id):
+    for channel in Channel.get_channels_for_user_id(user_id):
         if channel.channel_type == 'discord':
             discord_user_id = channel.channel_user_id
 
