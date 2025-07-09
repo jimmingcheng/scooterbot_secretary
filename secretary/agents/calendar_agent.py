@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from secretary.agents.base import UserContext
 from secretary.agents.base import UserContextWrapper
-from secretary.calendar import get_calendar_service
+from secretary.google_apis import get_calendar_service
 from secretary.data_models import Event
 from secretary.service_config import config
 

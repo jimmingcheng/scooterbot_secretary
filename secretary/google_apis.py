@@ -1,6 +1,7 @@
 from functools import lru_cache
-from oauth2client.client import OAuth2Credentials
 
+from googleapiclient import discovery
+from oauth2client.client import OAuth2Credentials
 from oauth_userdb.client import OAuthUserDBClient
 from oauth_userdb.dynamodb_client import DynamoDBOAuthUserDBClient
 
@@ -46,3 +47,13 @@ def get_google_apis_creds(user_id: str) -> OAuth2Credentials:
         user_agent='scooterbot_secretary',
         scopes=get_oauth_client().scope,
     )
+
+
+@lru_cache(maxsize=100)
+def get_calendar_service(user_id: str):
+    return discovery.build('calendar', 'v3', credentials=get_google_apis_creds(user_id))
+
+
+@lru_cache(maxsize=1)
+def get_gmail_service(user_id: str):
+    return discovery.build('gmail', 'v1', credentials=get_google_apis_creds(user_id))

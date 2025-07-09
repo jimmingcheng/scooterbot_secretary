@@ -6,12 +6,14 @@ import boto3
 import jwt
 from apiclient import discovery
 from functools import lru_cache
+from pytz import timezone  # type: ignore
 
 from secretary.data_models import SecretaryOAuth
+from secretary.google_apis import get_calendar_service
 from secretary.google_apis import get_google_apis_creds
-from secretary.calendar import event_start_time
-from secretary.calendar import get_calendar_service
-from secretary.calendar import TZ
+
+
+TZ = timezone('US/Pacific')
 
 
 EMAIL_TEMPLATE = '''
@@ -177,6 +179,11 @@ EMAIL_TEMPLATE = '''
 
 </html>
 '''
+
+
+def event_start_time(event: dict) -> arrow.Arrow:
+    event_start = event['start']
+    return arrow.get(event_start.get('dateTime') or event_start.get('date'))
 
 
 @lru_cache(maxsize=1)
