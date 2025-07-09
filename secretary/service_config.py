@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 
 import yaml
 from pydantic import BaseModel
@@ -40,4 +41,11 @@ def load_service_config() -> SecretaryConfig:
     return SecretaryConfig(**data)
 
 
-config = load_service_config()
+config_path = '/sb/config/secretary.yaml'
+
+
+@lru_cache(maxsize=1)
+def cfg() -> SecretaryConfig:
+    with open(config_path, "r") as f:
+        data = yaml.safe_load(f)
+    return SecretaryConfig(**data)

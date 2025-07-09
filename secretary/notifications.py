@@ -2,7 +2,7 @@ import httpx
 
 from sb_service_util.data_models.channel import ChannelType
 
-from secretary.service_config import config
+from secretary.service_config import cfg
 from secretary.data_models.channel import Channel
 
 
@@ -23,7 +23,7 @@ async def discord_notify(discord_user_id: str, message: str) -> None:
             'https://discord.com/api/users/@me/channels',
             headers={
                 'Content-Type': 'application/json',
-                'Authorization': f'Bot {config.discord.bot_token}'
+                'Authorization': f'Bot {cfg().discord.bot_token}'
             },
             json={'recipient_id': discord_user_id},
         )
@@ -34,7 +34,7 @@ async def discord_notify(discord_user_id: str, message: str) -> None:
             f'https://discord.com/api/channels/{channel}/messages',
             headers={
                 'Content-Type': 'application/json',
-                'Authorization': f'Bot {config.discord.bot_token}',
+                'Authorization': f'Bot {cfg().discord.bot_token}',
             },
             json={'content': message},
         )

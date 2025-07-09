@@ -1,7 +1,7 @@
 import httpx
 
 
-from secretary.service_config import config
+from secretary.service_config import cfg
 from secretary.data_models.channel import Channel
 
 
@@ -21,7 +21,7 @@ async def say(
             'https://discord.com/api/users/@me/channels',
             headers={
                 'Content-Type': 'application/json',
-                'Authorization': f'Bot {config.discord.bot_token}',
+                'Authorization': f'Bot {cfg().discord.bot_token}',
             },
             json={'recipient_id': discord_user_id},
         )
@@ -32,7 +32,7 @@ async def say(
             f'https://discord.com/api/channels/{channel}/messages',
             headers={
                 'Content-Type': 'application/json',
-                'Authorization': f'Bot {config.discord.bot_token}',
+                'Authorization': f'Bot {cfg().discord.bot_token}',
             },
             json={'content': content},
         )

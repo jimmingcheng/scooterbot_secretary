@@ -15,7 +15,7 @@ from secretary.agents.base import UserContext
 from secretary.agents.base import UserContextWrapper
 from secretary.google_apis import get_calendar_service
 from secretary.data_models.event import Event
-from secretary.service_config import config
+from secretary.service_config import cfg
 
 
 class CalendarAgent(OpenAIAgent):
@@ -168,7 +168,7 @@ async def create_event(
     calsvc = get_calendar_service(cast(UserContext, ctx.context).user_id)
 
     if location:
-        gmaps = googlemaps.Client(key=config.google_apis.api_key)
+        gmaps = googlemaps.Client(key=cfg().google_apis.api_key)
         places = gmaps.places(query=location)['results']
         if len(places) == 1:
             location += ' ' + places[0]['formatted_address']

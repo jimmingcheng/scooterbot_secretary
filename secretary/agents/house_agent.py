@@ -3,7 +3,7 @@ from __future__ import annotations
 import httpx
 
 from secretary.account_linking import get_account_link_manager
-from secretary.service_config import config
+from secretary.service_config import cfg
 
 
 class HouseAgent:
@@ -15,7 +15,7 @@ class HouseAgent:
     async def make_request(self, request: str) -> str:
         async with httpx.AsyncClient(timeout=60) as client:
             resp = await client.post(
-                config.account_links.house.api_host + '/send_message_to_agent',
+                cfg().account_links.house.api_host + '/send_message_to_agent',
                 json={
                     'user_id': self.user_id,
                     'message': request,

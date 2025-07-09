@@ -9,7 +9,7 @@ from sb_service_util.errors import UserDataNotFoundError
 
 import secretary
 from secretary.agents.main_agent import SecretaryAgent
-from secretary.service_config import config
+from secretary.service_config import cfg
 from secretary.data_models.channel import Channel
 
 
@@ -97,7 +97,7 @@ def run():
     intents.message_content = True
 
     bot = SecretaryDiscordBot(intents=intents)
-    bot.run(config.discord.bot_token)
+    bot.run(cfg().discord.bot_token)
 
 
 if __name__ == '__main__':

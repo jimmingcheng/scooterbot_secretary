@@ -5,7 +5,7 @@ import textwrap
 from agents import function_tool
 from agents import ModelSettings
 
-from secretary.service_config import config
+from secretary.service_config import cfg
 from secretary.account_linking import get_account_link_manager
 from secretary.agents.base import BaseSecretaryAgent
 from secretary.agents.base import UserContext
@@ -66,7 +66,7 @@ async def remove_account(ctx: UserContextWrapper) -> str:
 async def link_account_to_tesla_agent(ctx: UserContextWrapper) -> str:
     user_ctx = cast(UserContext, ctx.context)
     token = get_account_link_manager().make_token('secretary', user_ctx.user_id)
-    url = config.account_links.tesla.linking_url + '?a=secretary&u=' + user_ctx.user_id + '&t=' + token
+    url = cfg().account_links.tesla.linking_url + '?a=secretary&u=' + user_ctx.user_id + '&t=' + token
     return 'To link your Secretary Agent with your Tesla Agent, visit: ' + url
 
 
@@ -74,7 +74,7 @@ async def link_account_to_tesla_agent(ctx: UserContextWrapper) -> str:
 async def link_account_to_house_agent(ctx: UserContextWrapper) -> str:
     user_ctx = cast(UserContext, ctx.context)
     token = get_account_link_manager().make_token('secretary', user_ctx.user_id)
-    url = config.account_links.house.linking_url + '?a=secretary&u=' + user_ctx.user_id + '&t=' + token
+    url = cfg().account_links.house.linking_url + '?a=secretary&u=' + user_ctx.user_id + '&t=' + token
     return 'To link your Secretary Agent with your House Agent, visit: ' + url
 
 
