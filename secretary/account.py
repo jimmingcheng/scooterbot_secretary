@@ -1,6 +1,6 @@
-from secretary.data_models import Channel
-from secretary.data_models import SecretaryOAuth
-from secretary.data_models import User
+from secretary.data_models.channel import Channel
+from secretary.data_models.oauth import SecretaryOAuth
+from secretary.data_models.user import User
 
 
 def remove_account(user_id: str) -> None:

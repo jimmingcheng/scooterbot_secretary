@@ -3,7 +3,7 @@ import httpx
 from sb_service_util.data_models.channel import ChannelType
 
 from secretary.service_config import config
-from secretary.data_models import Channel
+from secretary.data_models.channel import Channel
 
 
 async def notify(user_id: str, message: str, channel_type: ChannelType | None = None) -> None:

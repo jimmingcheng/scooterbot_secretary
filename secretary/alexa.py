@@ -17,7 +17,7 @@ from ask_sdk_core.utils import is_intent_name
 from ask_sdk_core.utils import is_request_type
 
 from secretary.agents.main_agent import SecretaryAgent
-from secretary.data_models import Channel
+from secretary.data_models.channel import Channel
 
 
 class IssuePromptHandler(AbstractRequestHandler):

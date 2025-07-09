@@ -2,7 +2,7 @@ import httpx
 
 
 from secretary.service_config import config
-from secretary.data_models import Channel
+from secretary.data_models.channel import Channel
 
 
 async def say(

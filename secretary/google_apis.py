@@ -5,7 +5,7 @@ from oauth2client.client import OAuth2Credentials
 from oauth_userdb.client import OAuthUserDBClient
 from oauth_userdb.dynamodb_client import DynamoDBOAuthUserDBClient
 
-from secretary.data_models import SecretaryOAuth
+from secretary.data_models.oauth import SecretaryOAuth
 from secretary.service_config import config
 
 

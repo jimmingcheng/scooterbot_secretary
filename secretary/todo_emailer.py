@@ -8,7 +8,7 @@ from apiclient import discovery
 from functools import lru_cache
 from pytz import timezone  # type: ignore
 
-from secretary.data_models import SecretaryOAuth
+from secretary.data_models.oauth import SecretaryOAuth
 from secretary.google_apis import get_calendar_service
 from secretary.google_apis import get_google_apis_creds
 

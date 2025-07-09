@@ -10,8 +10,8 @@ from oauth_userdb.client import OAuthUserDBClient
 from urllib.parse import quote
 from urllib.parse import unquote
 
-from secretary.data_models import Channel
-from secretary.data_models import User
+from secretary.data_models.channel import Channel
+from secretary.data_models.user import User
 from secretary.google_apis import get_oauth_client
 from secretary.notifications import notify
 from secretary.views.base import HTMLPage

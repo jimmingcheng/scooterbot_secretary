@@ -7,8 +7,8 @@ from urllib.parse import quote
 from urllib.parse import unquote
 from uuid import uuid1
 
-from secretary.data_models import Channel
-from secretary.data_models import User
+from secretary.data_models.channel import Channel
+from secretary.data_models.user import User
 from secretary.google_apis import get_oauth_client
 
 

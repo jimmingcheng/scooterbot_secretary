@@ -9,6 +9,7 @@ from secretary.agents.base import BaseSecretaryAgent
 from secretary.agents.base import UserContext
 from secretary.agents.base import UserContextWrapper
 from secretary.agents.calendar_agent import CalendarAgent
+from secretary.agents.gmail_agent import GmailAgent
 from secretary.agents.house_agent import HouseAgent
 from secretary.agents.tesla_agent import TeslaAgent
 from secretary.agents.todo_agent import TodoAgent
@@ -18,12 +19,16 @@ class SecretaryAgent(BaseSecretaryAgent):
     def __init__(self, user_ctx: UserContext) -> None:
         tools = [
             CalendarAgent(user_ctx).as_tool(
-                tool_name='read_and_manage_calendars_with_calendar_agent',
-                tool_description="The Calendar Agent can search and create events across the user's Google Calendars.",
+                tool_name='read_and_manage_calendars',
+                tool_description="Search and create events across the user's Google Calendars.",
+            ),
+            GmailAgent(user_ctx).as_tool(
+                tool_name='answer_questions_using_info_from_gmail',
+                tool_description="Answer questions using info from the user's Gmail messages and threads.",
             ),
             TodoAgent(user_ctx).as_tool(
-                tool_name='read_and_manage_todos_with_todo_agent',
-                tool_description="The Todo Agent can search, create, and resolve todos on the user's todo list.",
+                tool_name='read_and_manage_todos',
+                tool_description="Search, create, and resolve tasks on the user's todo list.",
             ),
         ]
 

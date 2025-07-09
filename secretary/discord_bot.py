@@ -10,7 +10,7 @@ from sb_service_util.errors import UserDataNotFoundError
 import secretary
 from secretary.agents.main_agent import SecretaryAgent
 from secretary.service_config import config
-from secretary.data_models import Channel
+from secretary.data_models.channel import Channel
 
 
 class SecretaryDiscordBot(discord.Client):

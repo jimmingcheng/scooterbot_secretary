@@ -29,7 +29,7 @@ scheduler = TaskiqScheduler(
 async def email_daily_todos() -> None:
     from secretary.todo_emailer import get_todos_to_remind_today
     from secretary.todo_emailer import send_email
-    from secretary.data_models import User
+    from secretary.data_models.user import User
 
     logging.info('Email daily todos')
     calendar_tuples = {

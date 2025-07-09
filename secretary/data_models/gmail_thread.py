@@ -6,8 +6,9 @@ from email.utils import parsedate_to_datetime
 
 from bs4 import BeautifulSoup
 from email_reply_parser import EmailReplyParser
-from googleapiclient.discovery import Resource
 from pydantic import BaseModel
+
+from secretary.google_apis import get_gmail_service
 
 
 class GmailMessage(BaseModel):
@@ -82,35 +83,42 @@ class GmailThread(BaseModel):
     @classmethod
     def search(
         cls,
-        gmailsvc: Resource,
+        user_id: str,
         query: str,
         label_ids: list[str],
-        max_results: int = 10
-    ) -> list[GmailThread]:
-        """
-        Retrieve Gmail threads matching the given query and labels, returning a list of
-        GmailThread models with messages sorted chronologically.
-        """
+        page_token: str | None = None,
+        max_results_per_page: int = 10,
+    ) -> GmailThreadsResult:
+        gmailsvc = get_gmail_service(user_id)
+
         threads: list[GmailThread] = []
-        # list threads with pagination
-        resp = gmailsvc.users().threads().list(userId='me', q=query, labelIds=label_ids).execute()
-        while True:
-            for tinfo in resp.get('threads', []):
-                # fetch full thread including message payloads
-                thread_dict = gmailsvc.users().threads().get(
-                    userId='me', id=tinfo['id'], format='full'
-                ).execute()
-                threads += [cls.from_thread_dict(thread_dict)]
-                if len(threads) >= max_results:
-                    return threads[:max_results]
-            page_token = resp.get('nextPageToken')
-            if not page_token:
-                break
-            resp = gmailsvc.users().threads().list(
-                userId='me', q=query, labelIds=label_ids,
-                pageToken=page_token
+
+        resp = gmailsvc.users().threads().list(
+            userId='me',
+            q=query,
+            labelIds=label_ids,
+            maxResults=max_results_per_page,
+            pageToken=page_token,
+        ).execute()
+
+        for tinfo in resp.get('threads', []):
+            thread_dict = gmailsvc.users().threads().get(
+                userId='me',
+                id=tinfo['id'],
+                format='full'
             ).execute()
-        return threads
+
+            threads += [cls.from_thread_dict(thread_dict)]
+
+        return GmailThreadsResult(
+            threads=threads,
+            next_page_token=resp.get('nextPageToken')
+        )
+
+
+class GmailThreadsResult(BaseModel):
+    threads: list[GmailThread]
+    next_page_token: str | None = None
 
 
 class MessageBodyCleaner:
