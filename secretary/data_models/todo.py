@@ -68,8 +68,8 @@ class Todo(BaseModel):
         )
 
     @classmethod
-    def get(cls, cal: Resource, todo_id: str) -> Todo:
-        event = cal.events().get(calendarId='primary', eventId=todo_id).execute()
+    def get(cls, calsvc: Resource, todo_id: str) -> Todo:
+        event = calsvc.events().get(calendarId='primary', eventId=todo_id).execute()
         if cls.get_extended_property(event, 'sb_type') != 'todo':
             raise ValueError(f"Event with ID {todo_id} is not a todo.")
         return cls.from_gcal_event(event)

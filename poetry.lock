@@ -401,6 +401,29 @@ files = [
 ]
 
 [[package]]
+name = "beautifulsoup4"
+version = "4.13.4"
+description = "Screen-scraping library"
+optional = false
+python-versions = ">=3.7.0"
+groups = ["main"]
+files = [
+    {file = "beautifulsoup4-4.13.4-py3-none-any.whl", hash = "sha256:9bbbb14bfde9d79f38b8cd5f8c7c85f4b8f2523190ebed90e950a8dea4cb1c4b"},
+    {file = "beautifulsoup4-4.13.4.tar.gz", hash = "sha256:dbb3c4e1ceae6aefebdaf2423247260cd062430a410e38c66f2baa50a8437195"},
+]
+
+[package.dependencies]
+soupsieve = ">1.2"
+typing-extensions = ">=4.0.0"
+
+[package.extras]
+cchardet = ["cchardet"]
+chardet = ["chardet"]
+charset-normalizer = ["charset-normalizer"]
+html5lib = ["html5lib"]
+lxml = ["lxml"]
+
+[[package]]
 name = "boto3"
 version = "1.39.3"
 description = "The AWS SDK for Python"
@@ -813,6 +836,19 @@ files = [
 [package.dependencies]
 ask-sdk-webservice-support = ">=0.1.0"
 django = ">=2.0"
+
+[[package]]
+name = "email-reply-parser"
+version = "0.5.12"
+description = "Email reply parser"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "email_reply_parser-0.5.12-py2-none-any.whl", hash = "sha256:d051cfa8f54046f7399553aae57f17f62bf1652f83e3e9970fd109c0f24a880c"},
+    {file = "email_reply_parser-0.5.12-py3-none-any.whl", hash = "sha256:3499c02284679e020acf8aa30ef9e43c62f9ab5ccee0a35bfac85a0c1fa685fd"},
+    {file = "email_reply_parser-0.5.12.tar.gz", hash = "sha256:9dbf3eca69990932234f09e7f50aa73756574fc1f88e88c324fec1a741ee6a74"},
+]
 
 [[package]]
 name = "executing"
@@ -2854,6 +2890,18 @@ files = [
 ]
 
 [[package]]
+name = "soupsieve"
+version = "2.7"
+description = "A modern CSS selector implementation for Beautiful Soup."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "soupsieve-2.7-py3-none-any.whl", hash = "sha256:6e60cc5c1ffaf1cebcc12e8188320b72071e922c2e897f737cadce79ad5d30c4"},
+    {file = "soupsieve-2.7.tar.gz", hash = "sha256:ad282f9b6926286d2ead4750552c8a6142bc4c783fd66b0293547c8fe6ae126a"},
+]
+
+[[package]]
 name = "sqlparse"
 version = "0.4.3"
 description = "A non-validating SQL parser."
@@ -3394,4 +3442,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "06b44ae121d0725c94af3fd64405541f202d5038dbe9d95dc65f996e44478a45"
+content-hash = "cbda28cbc7ed69bc530861626eb2610606ffe0935af32476c3d5afd4929be7f5"
