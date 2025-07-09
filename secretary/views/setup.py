@@ -125,30 +125,32 @@ class SplashPage(HTMLPage):
                 <ul>
                     <li>The natural language requests you submit directly to Scooterbot AI during chats</li>
                     <li>Your Google Calendar events and schedules</li>
+                    <li>Your Gmail messages, labels, and metadata</li>
                 </ul>
 
                 <p>Your privacy is important to us, and here's how we'll use it:</p>
 
                 <h3>Use of Data</h3>
-                <p>The data we collect is solely used for fulfilling tasks on your calendar such as reading your schedule and creating events. This includes:</p>
+                <p>The data we collect is solely used for fulfilling tasks on your calendar and in your email such as reading your schedule, creating events, searching, reading, composing, and sending emails, and organizing messages with labels. This includes:</p>
                 <ul>
                     <li>When send a message to your Secretary, we'll forward the message text to ChatGPT, a 3rd party AI owned by OpenAI.</li>
-                    <li>After OpenAI interprets your message, we'll use the interpreted instructions to read or write to your Google Calendar on your behalf.</li>
-                    <li>In some cases, the specific Google Calendar data you request will be sent back to ChatGPT for further interpretation.</li>
+                    <li>After OpenAI interprets your message, we'll use the interpreted instructions to read or write to your Google Calendar or Gmail on your behalf.</li>
+                    <li>In some cases, the specific Google Calendar or Gmail data you request will be sent back to ChatGPT for further interpretation.</li>
                 </ul>
 
                 <h3>Disclosure of Data</h3>
                 <p>We may send your data to a third-party AI (OpenAI) for interpreting natural language requests. OpenAI may retain your data for up to 30 days to identify abuse, but will not otherwise retain your data or use it for any other purpose than to provide responses to your requests. Besides this, your data remains confidential and won't be sold, distributed, leased, or disclosed to other third parties unless we have your permission or are required by law to do so.</p>
 
-                <p>By clicking "Connect Google Calendar", you agree to the above terms, as well as our <a href="/privacy">Privacy Policy</a> and <a href="/tos">Terms of Service</a></p>
+                <p>By clicking "Connect Google Account", you agree to the above terms, as well as our <a href="/privacy">Privacy Policy</a> and <a href="/tos">Terms of Service</a></p>
             </div>
 
             <form action="/setup/step1" method="GET">
                 <input type="hidden" name="discord_user_id" value="{discord_user_id}" />
                 <input type="hidden" name="sms" value="{sms_number}" />
                 <button type="submit" class="login">
-                    <img src="/static/gcal_logo.png" alt="Google Calendar Logo" />
-                    Connect Google Calendar
+                    <img src="https://www.gstatic.com/marketing-cms/assets/images/cf/3c/0d56042f479fac9ad22d06855578/calender.webp" alt="Google Calendar Logo" />
+                    <img src="https://www.gstatic.com/marketing-cms/assets/images/66/ac/14b165e647fd85c824bfbe5d6bc5/gmail.webp" alt="Gmail Logo" />
+                    Connect Google Account
                 </button>
             </form>
             """
