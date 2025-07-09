@@ -1,48 +1,42 @@
 from django.urls import path
-from django.urls import re_path
 from django_ask_sdk.skill_adapter import SkillAdapter
-from django.views.generic import TemplateView
 
 from secretary.alexa import get_skill_builder
 from secretary.views import account
 from secretary.views import link_accounts
-from secretary.views import login
-from secretary.views import read
 from secretary.views import setup
 from secretary.views import setup_alexa
 from secretary.views import twilio
-from secretary.views import webhooks
+from secretary.views.base import static_view
+from secretary.views.home import HomePage
+from secretary.views.privacy_policy import PrivacyPolicyPage
+from secretary.views.signup import SignupPage
+from secretary.views.tos import TermsOfServicePage
 
-
-REACT = TemplateView.as_view(template_name='index.html')
 
 urlpatterns = [
-    path('', REACT),
-    path('signup', REACT),
-    path('privacy', REACT),
-    path('tos', REACT),
-    re_path(r'^account/remove$', account.remove_account),
-    re_path(r'^account/remove/confirm$', account.confirm_remove_account),
-    re_path(r'^link_accounts$', link_accounts.step1),
-    re_path(r'^link_accounts/step2$', link_accounts.step2),
-    re_path(r'^login$', REACT),
-    re_path(r'^login/step2$', login.step2),
-    re_path(r'^login/step3$', login.step3),
-    re_path(r'^login/step4$', REACT),
-    re_path(r'^login/step4/calendar_list$', login.step4_calendar_list),
-    re_path(r'^login/step5$', login.step5),
-    re_path(r'^login/alexa$', login.alexa_step1),
-    re_path(r'^login/alexa/step2$', login.alexa_step2),
-    re_path(r'^setup$', setup.step1),
-    re_path(r'^setup/step2$', setup.step2),
-    re_path(r'^setup/alexa$', setup_alexa.step1),
-    re_path(r'^setup/alexa/step2$', setup_alexa.step2),
-    re_path(r'webhooks/add_todo$', webhooks.add_todo),
-    re_path(r'^alexa$', SkillAdapter.as_view(
+    # Static pages
+    path('', static_view(HomePage)),
+    path('signup', static_view(SignupPage)),
+    path('privacy', static_view(PrivacyPolicyPage)),
+    path('tos', static_view(TermsOfServicePage)),
+
+    # Endpoints
+    path('account/remove', account.remove_account),
+    path('account/remove/confirm', account.confirm_remove_account),
+    path('link_accounts', link_accounts.step1),
+    path('link_accounts/step2', link_accounts.step2),
+    path('setup', setup.splash),
+    path('setup/step1', setup.step1),
+    path('setup/step2', setup.step2),
+    path('setup/alexa/step1', setup_alexa.step1),
+    path('setup/alexa/step2', setup_alexa.step2),
+    path('twilio/sms_reply', twilio.sms_reply),
+
+    # Alexa skill endpoint
+    path('alexa', SkillAdapter.as_view(
         skill=get_skill_builder().create(),
         verify_signature=False,
         verify_timestamp=False,
     )),
-    re_path(r'^todos$', read.get_todos_for_day),
-    re_path(r'^twilio/sms_reply$', twilio.sms_reply),
 ]

@@ -30,7 +30,6 @@ class SecretaryConfig(BaseModel):
     openai_api_key: str
     account_links: AccountLinksConfig
     discord: DiscordConfig
-    webhook_token: str
 
 
 def load_service_config() -> SecretaryConfig:
