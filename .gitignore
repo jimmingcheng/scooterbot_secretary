@@ -11,3 +11,4 @@ data/
 dist/
 secrets/
 venv*/
+.testenv

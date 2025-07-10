@@ -6,6 +6,7 @@ venv: poetry.lock
 test: venv
 	venv/bin/mypy secretary/
 	touch venv
+	dotenv -f .testenv run -- venv/bin/python -m pytest tests/
 
 .PHONY: clean
 clean:
