@@ -32,7 +32,7 @@ class Event(BaseModel):
 
         return cls(
             id=event['id'],
-            summary=event['summary'],
+            summary=event.get('summary', ''),
             start=start,
             end=end,
             location=event.get('location'),

@@ -1,17 +1,43 @@
 from __future__ import annotations
 
 from typing import cast
+from typing import Literal
 
 import arrow
 import textwrap
 from agents import Agent as OpenAIAgent
 from agents import function_tool
 from agents.extensions.handoff_prompt import RECOMMENDED_PROMPT_PREFIX
+from pydantic import BaseModel
 
 from secretary.agents.base import UserContext
 from secretary.agents.base import UserContextWrapper
 from secretary.data_models.gmail_thread import GmailThread, GmailThreadsResult
 from secretary.google_apis import get_calendar_service
+
+
+QueryType = Literal['recent_or_current_events', 'records_lookup']
+
+
+class KeywordPhrase(BaseModel):
+    unordered_keywords: list[str]
+
+
+class Query(BaseModel):
+    query_type: QueryType = 'recent_or_current_events'
+    keyword_phrases: list[KeywordPhrase] = []
+    sender: str | None = None
+
+    def __str__(self) -> str:
+        query_str = ' OR '.join(
+            '(' + ' '.join(phrase.unordered_keywords) + ')'
+            for phrase in self.keyword_phrases
+        )
+        if self.query_type == 'records_lookup':
+            query_str += ' after:' + arrow.now().shift(years=-2).format('YYYY-MM-DD')
+        if self.sender:
+            query_str += f' from:{self.sender}'
+        return query_str
 
 
 class GmailAgent(OpenAIAgent):
@@ -34,30 +60,52 @@ class GmailAgent(OpenAIAgent):
 
                 ## Guidelines
 
-                ### Keywords for Searching Threads
+                ### Keyword Phrases
 
-                Choose keywords to carefully balance recall and precision while using this syntax:
+                A keyword is a single term, such as "bob", "flight", or "social security". Most
+                keywords are single words, but they can also multiple words separated by spaces
+                (ordered).
 
-                - Parentheses = group terms
-                - Space = all terms must be present
-                - OR = logical OR
-                - Strip all punctuation
+                A keyword phrase is an unordered set of keywords that must all occur together, such
+                as {{"dentist", "arlington"}} or {{"honda", "license plate"}}.
+                thread only if all terms are present.
 
-                #### Good Examples
+                #### Choose Keyword Phrases that Balance Recall and Precision
 
-                - `What's my car's license plate number?` -> `license plate`
-                - `What was the name of the dentist I saw in Arlington?` -> `dentist arlington`
-                - `What's my itinerary for Boston?` -> `(trip OR itinerary OR flight) boston`
+                What's my car's license plate number?
+                - BAD: ["license", "plate", "number"] (loses recall without adding much precision)
+                - GOOD: ["license", "plate"]
+                - GOOD: ["license plate"]
 
-                #### Bad Examples
+                What was the name of the dentist I saw in Arlington?
+                - BAD: ["dentist", "in", "arlington"] (unnecessary preposition)
+                - GOOD: ["dentist", "arlington"]
 
-                - `license plate number` ("number" unnecessarily reduces recall without adding much precision)
-                - `itinerary boston` (itinerary is a rather specific term, could use OR expansion)
+                What's my social security number?
+                - BAD: ["ssn", "social security"] (redundant terms in single keyword phrase)
+                - GOOD: ["ssn"]
+                - GOOD: ["social security"]
 
-                ### Date Ranges
+                #### Add Keyword Phrases to Expand Synonyms
 
-                If the question is about a personal record, or something my require looking back
-                in very old records, set `date_min` to 1970-01-01
+                Generate up to 4 different keyword phrases to help recall
+
+                What's my social security number?
+                - ["ssn"]
+                - ["social security"]
+
+                What's my itinerary for Boston?
+                - ["trip", "boston"]
+                - ["itinerary", "boston"]
+                - ["flight", "boston"]
+
+                ### Senders
+
+                Examples:
+
+                - Bob Jones
+                - jim@abc.com
+                - amazon.com
 
                 # Current Time & Time Zone
 
@@ -77,29 +125,16 @@ class GmailAgent(OpenAIAgent):
 @function_tool
 async def search_message_threads(
     ctx: UserContextWrapper,
-    keywords: str,
-    sender: str | None = None,
-    include_threads_older_than_2y: bool = False,
+    query: Query,
 ) -> GmailThreadsResult:
     """
-    sender: Examples: `"Bob Jones"`, `amazon.com`, `jim@abc.com`
-    include_threads_older_than_2y: Set this to True to look up historical records likely to be
+    query_type: Set this to True to look up historical records likely to be
       found in threads older than 2 years. Most routine activities should not require this.
     """
     user_id = cast(UserContext, ctx.context).user_id
-    calsvc = get_calendar_service(user_id)
-    user_tz = calsvc.settings().get(setting='timezone').execute().get('value')
-
-    query = keywords
-
-    if not include_threads_older_than_2y:
-        query += ' after:' + arrow.now(user_tz).shift(years=-2).format('YYYY-MM-DD')
-
-    if sender:
-        query += f' from:{sender}'
 
     return GmailThread.search(
         user_id=user_id,
-        query=query,
+        query=str(query),
         label_ids=[],
     )

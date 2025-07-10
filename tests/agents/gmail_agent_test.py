@@ -12,8 +12,9 @@ from agents import Runner
 from secretary.agents.base import UserContext
 from secretary.agents.base import UserContextWrapper
 from secretary.agents.gmail_agent import GmailAgent
+from secretary.agents.gmail_agent import Query
+from secretary.agents.gmail_agent import QueryType
 from secretary.data_models.gmail_thread import GmailThreadsResult
-from tests.agents.gmail_agent_query_expansion import get_query_expansions
 from tests.conftest import ToolCallTracker
 
 
@@ -24,16 +25,13 @@ TEST_TZ = 'America/New_York'
 @function_tool
 async def search_message_threads(
     ctx: UserContextWrapper,
-    keywords: str,
+    query: Query,
     sender: str | None = None,
-    include_threads_older_than_2y: bool = False,
 ) -> GmailThreadsResult:
     TOOL_CALLS.add(
         call.search_message_threads(
             sentinel.ctx,
-            keywords,
-            sender=sender,
-            include_threads_older_than_2y=include_threads_older_than_2y,
+            query,
         )
     )
     return GmailThreadsResult(threads=[])
@@ -75,8 +73,8 @@ def run_agent(request: str) -> str:
 
 def _test_search_message_threads(
     request: str,
-    expected_keywords: set[str],
-    expected_include_threads_older_than_2y: bool = False,
+    expected_kw_phrases: list[set[str]],
+    expected_query_type: QueryType = 'recent_or_current_events',
     expected_sender: str | None = None,
 ) -> None:
     TOOL_CALLS.reset()
@@ -85,39 +83,57 @@ def _test_search_message_threads(
 
     tool_call = TOOL_CALLS.get()[0]
 
-    keywords = tool_call.args[1]
+    query: Query = tool_call.args[1]
 
-    ok = False
-    for actual_keywords in get_query_expansions(keywords):
-        if len(actual_keywords) >= 2 and actual_keywords <= expected_keywords:
-            ok = True
-            break
+    kw_phrases = []
+    for kw_phrase in query.keyword_phrases:
+        kw_phrases += [{
+            kw.lower().replace("'s", '')
+            for kw in kw_phrase.unordered_keywords
+        }]
 
-    assert ok
+    test_pairs = [
+        (kw_phrase, expected_kw_phrase)
+        for kw_phrase in kw_phrases
+        for expected_kw_phrase in expected_kw_phrases
+    ]
 
-    assert tool_call.kwargs['sender'] == expected_sender
-    assert tool_call.kwargs['include_threads_older_than_2y'] == expected_include_threads_older_than_2y
+    assert any(
+        kw_phrase and kw_phrase <= expected_kw_phrase
+        for kw_phrase, expected_kw_phrase in test_pairs
+    ), f'input `{str(query)}` did not resolve to one of the expected keyword phrases `{expected_kw_phrases}`'
+
+    assert query.query_type == expected_query_type
+    assert query.sender == expected_sender
 
 
 def test_search_message_threads() -> None:
     _test_search_message_threads(
-        "What's my flight to Denver?",
-        expected_keywords={'flight', 'denver'},
+        "When's my flight to Denver?",
+        [{'flight', 'denver'}],
     )
 
     _test_search_message_threads(
         "What's my driver's license number?",
-        expected_keywords={'driver', 'license'},
-        expected_include_threads_older_than_2y=True,
+        [
+            {'driver', 'license'},
+            {'driver license'},
+        ],
+        expected_query_type='records_lookup',
     )
 
     _test_search_message_threads(
-        "Did I get an invite for Joe's birthday party?",
-        expected_keywords={'joe', 'birthday', 'party'},
+        "Did I receive an invitation for Joe's birthday party?",
+        [{'joe', 'birthday', 'party', 'invitation'}],
     )
 
     _test_search_message_threads(
-        "What did the Dr. Smith say about my treatment plan?",
-        expected_keywords={'dr', 'smith', 'treatment', 'plan'},
-        expected_include_threads_older_than_2y=True,
+        "What's the EIN for Bob's Bakery?",
+        [
+            {'ein', 'bob bakery'},
+            {'employer', 'identification', 'number', 'bob bakery'},
+            {'ein', 'bob', 'bakery'},
+            {'employer', 'identification', 'number', 'bob', 'bakery'},
+        ],
+        expected_query_type='records_lookup',
     )

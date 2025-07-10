@@ -87,13 +87,11 @@ class GmailThread(BaseModel):
         query: str,
         label_ids: list[str],
         page_token: str | None = None,
-        max_results_per_page: int = 10,
+        max_results_per_page: int = 100,
     ) -> GmailThreadsResult:
         gmailsvc = get_gmail_service(user_id)
 
-        threads: list[GmailThread] = []
-
-        resp = gmailsvc.users().threads().list(
+        resp = gmailsvc.users().messages().list(
             userId='me',
             q=query,
             labelIds=label_ids,
@@ -101,10 +99,13 @@ class GmailThread(BaseModel):
             pageToken=page_token,
         ).execute()
 
-        for tinfo in resp.get('threads', []):
+        thread_ids = {m['threadId'] for m in resp.get('messages', [])}
+
+        threads: list[GmailThread] = []
+        for thread_id in thread_ids:
             thread_dict = gmailsvc.users().threads().get(
                 userId='me',
-                id=tinfo['id'],
+                id=thread_id,
                 format='full'
             ).execute()
 

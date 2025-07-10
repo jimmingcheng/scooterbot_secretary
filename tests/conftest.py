@@ -4,9 +4,9 @@ from typing import Iterator
 import pytest
 from contextlib import contextmanager
 from unittest.mock import patch
-from agents._run_impl import NextStepHandoff
-
 from agents import Agent as OpenAIAgent
+from agents import set_tracing_disabled
+from agents._run_impl import NextStepHandoff
 
 
 class NoopAgent(OpenAIAgent):
@@ -47,5 +47,6 @@ class ToolCallTracker:
 
 @pytest.fixture(autouse=True)
 def run_secretary_init() -> None:
+    set_tracing_disabled(True)
     import secretary
     secretary.init('tests/secretary.yaml')

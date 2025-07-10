@@ -49,22 +49,37 @@ class CalendarAgent(OpenAIAgent):
 
                 ## Searching For Events
 
-                1. Identify which calendars are relevant to the request based on calendar names
-                2. Identify which calendars are irrelevant
-                3. Search only within the relevant calendars
+                1. Identify which calendars are relevant
+                2. Identify the relevant time range
+                3. Search only within the relevant calendars and time range
 
-                ### Example
+                ### Identifying Relevant Calendars
 
-                Suppose I have the following calendars:
+                Use the names of the calendars to determine relevance the user's request.
 
-                - primary
-                - work
-                - family
-                - construction project
+                Assume the primary calendar is relevant by default. Only exclude it if the user
+                explicitly states they want to search a different calendar.
+
+                #### Examples
+
+                Suppose I have the following calendar names:
+
+                - Personal (primary)
+                - Work
+                - Family
+                - Construction Project
 
                 - "What events do I have tomorrow?" -> search all calendars for events on the next day
-                - "When is my next work meeting?" -> search work and primary calendars
-                - "Where is my consult with the architect?" -> search construction project and primary calendars
+                - "When is my next work meeting?" -> search Work and primary calendars
+                - "Where is my consult with the architect?" -> search Construction Project and primary calendars
+
+                ### Identifying Relevant Time Range
+
+                The default time range should be -6 months to +6 months from the current time.
+
+                To manage the number of events scanned, make sure time_max - time_min is at most 1
+                year for any particular search. If needed break larger time ranges into multiple
+                searches util result is found.
 
                 ## Creating Events
 
@@ -85,7 +100,7 @@ class CalendarAgent(OpenAIAgent):
             ),
             output_type=str,
             tools=[
-                list_events,
+                search_events,
                 create_event,
             ],
         )
@@ -113,8 +128,21 @@ class EventsResult(BaseModel):
     error_message: str | None = None
 
 
+def events_per_day(
+    events: list[dict],
+) -> float:
+    first_event_start = events[0]['start'].get('dateTime') or events[0]['start']['date']
+    last_event_start = events[-1]['start'].get('dateTime') or events[-1]['start']['date']
+
+    days = (
+        arrow.get(last_event_start).date() - arrow.get(first_event_start).date()
+    ).days
+
+    return len(events) / (days + 1) if days > 0 else len(events)
+
+
 @function_tool
-async def list_events(
+async def search_events(
     ctx: UserContextWrapper,
     calendar_id: str,
     time_min: str,
@@ -137,7 +165,18 @@ async def list_events(
     ).execute().get('items', [])
 
     if len(event_dicts) >= max_results:
-        return EventsResult(events=[], error_message='Too many events found. Narrow the time range and try again.')
+        days = min(
+            max_results * 0.8 // events_per_day(event_dicts),
+            90,
+        )
+        new_time_min = arrow.get(time_max).shift(days=-days).isoformat()
+
+        return EventsResult(
+            events=[],
+            error_message=(
+                f'Time range was too wide to query. Try again with time_min={new_time_min} and time_max={time_max}.'
+            )
+        )
 
     events = [
         Event.from_gcal_event(d)
