@@ -25,7 +25,7 @@ class CalendarAgent(OpenAIAgent):
         model: str = 'gpt-4.1-mini',
     ) -> None:
         calsvc = get_calendar_service(user_ctx.user_id)
-        user_tz = calsvc.settings().get(setting='timezone').execute().get('value')
+        tz = calsvc.settings().get(setting='timezone').execute().get('value')
 
         calendar_names_and_ids = yaml.dump(
             [
@@ -47,11 +47,11 @@ class CalendarAgent(OpenAIAgent):
 
                 Use the provided tools to interact with the user's Google Calendars.
 
-                ## Searching For Events
+                ## Listing Events
 
                 1. Identify which calendars are relevant
                 2. Identify the relevant time range
-                3. Search only within the relevant calendars and time range
+                3. List only within the relevant calendars and time range
 
                 ### Identifying Relevant Calendars
 
@@ -69,9 +69,9 @@ class CalendarAgent(OpenAIAgent):
                 - Family
                 - Construction Project
 
-                - "What events do I have tomorrow?" -> search all calendars for events on the next day
-                - "When is my next work meeting?" -> search Work and primary calendars
-                - "Where is my consult with the architect?" -> search Construction Project and primary calendars
+                - "What events do I have tomorrow?" -> list all calendars for events on the next day
+                - "When is my next work meeting?" -> list Work and primary calendars
+                - "Where is my consult with the architect?" -> list Construction Project and primary calendars
 
                 ### Identifying Relevant Time Range
 
@@ -95,36 +95,23 @@ class CalendarAgent(OpenAIAgent):
                 {calendar_names_and_ids}
                 '''
             ).format(
-                current_time=arrow.now(user_tz).isoformat(),
+                current_time=arrow.now(tz).isoformat(),
                 calendar_names_and_ids=calendar_names_and_ids,
             ),
             output_type=str,
             tools=[
-                search_events,
+                list_events,
+                list_master_instances_for_recurring_events,
                 create_event,
+                update_event,
+                delete_event,
             ],
         )
-
-    @classmethod
-    def simplify_event_dict(cls, orig: dict) -> dict:
-        simplified = {}
-
-        if 'summary' in orig:
-            simplified['summary'] = orig['summary']
-        if 'location' in orig:
-            simplified['location'] = orig['location']
-        if 'start' in orig:
-            simplified['start'] = orig['start']
-        if 'end' in orig:
-            simplified['end'] = orig['end']
-        if 'recurringEventId' in orig:
-            simplified['is_recurring'] = True
-
-        return simplified
 
 
 class EventsResult(BaseModel):
     events: list[Event]
+    hide_recurrence_properties: bool = True
     error_message: str | None = None
 
 
@@ -142,7 +129,7 @@ def events_per_day(
 
 
 @function_tool
-async def search_events(
+async def list_events(
     ctx: UserContextWrapper,
     calendar_id: str,
     time_min: str,
@@ -188,6 +175,40 @@ async def search_events(
 
 
 @function_tool
+async def list_master_instances_for_recurring_events(
+    ctx: UserContextWrapper,
+    calendar_id: str,
+) -> EventsResult:
+    """
+    time_min, time_max: format should be RFC3339 (YYYY-MM-DDTHH:mm:ssZZ)
+    """
+    calsvc = get_calendar_service(cast(UserContext, ctx.context).user_id)
+    tz = calsvc.settings().get(setting='timezone').execute().get('value')
+
+    event_dicts = calsvc.events().list(
+        calendarId=calendar_id,
+        timeMin=arrow.now(tz).isoformat(),
+        timeMax=arrow.now(tz).shift(months=12 + 1).isoformat(),
+        maxResults=2500,  # Google API hard max
+        singleEvents=False,
+    ).execute().get('items', [])
+
+    events = [
+        Event.from_gcal_event(d)
+        for d in event_dicts
+        if (
+            d.get('extendedProperties', {}).get('shared', {}).get('sb_type') != 'todo' and d.get('recurrence')
+        )
+    ]
+
+    return EventsResult(
+        events=events,
+        hide_recurrence_properties=False,
+        error_message=None
+    )
+
+
+@function_tool
 async def create_event(
     ctx: UserContextWrapper,
     calendar_id: str,
@@ -196,6 +217,8 @@ async def create_event(
     end: str,
     location: str | None,
     is_all_day_event: bool,
+    rfc5545_recurrence_properties: list[str] | None,
+    notes: str | None,
 ) -> str:
     """
     start, end: format should be RFC3339 (YYYY-MM-DDTHH:mm:ssZZ)
@@ -224,7 +247,11 @@ async def create_event(
         start=start,
         end=end,
         location=location,
+        recurrence=rfc5545_recurrence_properties,
     )
+
+    if notes:
+        event.log_to_description(notes)
 
     calsvc.events().insert(
         calendarId=calendar_id,
@@ -232,3 +259,79 @@ async def create_event(
     ).execute()
 
     return 'Successfully created event'
+
+
+@function_tool
+async def update_event(
+    ctx: UserContextWrapper,
+    calendar_id: str,
+    event_id: str,
+    summary: str | None = None,
+    start: str | None = None,
+    end: str | None = None,
+    location: str | None = None,
+    is_all_day_event: bool = False,
+    rfc5545_recurrence_properties: list[str] | None = None,
+    notes: str | None = None,
+) -> str:
+    """
+    start, end: format should be RFC3339 (YYYY-MM-DDTHH:mm:ssZZ)
+    """
+    calsvc = get_calendar_service(cast(UserContext, ctx.context).user_id)
+
+    event = Event.get(calsvc, calendar_id, event_id)
+
+    if summary:
+        event.log_to_description(f'Summary: {event.summary} → {summary}')
+        event.summary = summary
+
+    if start:
+        event.log_to_description(f'Start: {event.start} → {start}')
+        event.start = arrow.get(start).format('YYYY-MM-DD') if is_all_day_event else arrow.get(start).isoformat()
+
+    if end:
+        event.log_to_description(f'End: {event.end} → {end}')
+        event.end = arrow.get(end).format('YYYY-MM-DD') if is_all_day_event else arrow.get(end).isoformat()
+
+    if location:
+        gmaps = googlemaps.Client(key=cfg().google_apis.api_key)
+        places = gmaps.places(query=location)['results']
+        if len(places) == 1:
+            location += ' ' + places[0]['formatted_address']
+
+        event.log_to_description(f'Location: {event.location} → {location}')
+        event.location = location
+
+    if rfc5545_recurrence_properties is not None:
+        event.log_to_description('Changed recurrence properties')
+        event.recurrence = rfc5545_recurrence_properties
+
+    if notes:
+        event.log_to_description(notes)
+
+    calsvc.events().patch(
+        calendarId=calendar_id,
+        eventId=event_id,
+        body=event.to_gcal_event(),
+    ).execute()
+
+    return 'Successfully updated event'
+
+
+@function_tool
+async def delete_event(
+    ctx: UserContextWrapper,
+    calendar_id: str,
+    event_id: str,
+) -> str:
+    """
+    Deletes an event from the specified calendar.
+    """
+    calsvc = get_calendar_service(cast(UserContext, ctx.context).user_id)
+
+    calsvc.events().delete(
+        calendarId=calendar_id,
+        eventId=event_id,
+    ).execute()
+
+    return 'Successfully deleted event'
