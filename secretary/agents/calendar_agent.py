@@ -22,7 +22,7 @@ class CalendarAgent(OpenAIAgent):
     def __init__(
         self,
         user_ctx: UserContext,
-        model: str = 'gpt-4.1-mini',
+        model: str = 'gpt-4.1',
     ) -> None:
         calsvc = get_calendar_service(user_ctx.user_id)
         tz = calsvc.settings().get(setting='timezone').execute().get('value')

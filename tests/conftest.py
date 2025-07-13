@@ -1,6 +1,7 @@
 from typing import Any
 from typing import Iterator
 
+import arrow
 import pytest
 from contextlib import contextmanager
 from unittest.mock import patch
@@ -50,3 +51,13 @@ def run_secretary_init() -> None:
     set_tracing_disabled(True)
     import secretary
     secretary.init('tests/secretary.yaml')
+
+
+def get_next_weekday(day_index: int, tz='local') -> arrow.Arrow:
+    """
+    monday=0
+    """
+    now = arrow.now(tz)
+    days_ahead = (day_index - now.weekday() + 7) % 7 or 7
+    next_day = now.shift(days=days_ahead).replace(hour=0, minute=0, second=0, microsecond=0)
+    return next_day

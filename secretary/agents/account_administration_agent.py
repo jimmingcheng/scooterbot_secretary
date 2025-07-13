@@ -30,7 +30,7 @@ class AccountAdministrationAgent(BaseSecretaryAgent):
 
         super().__init__(
             name=self.__class__.__name__,
-            model='gpt-4.1-mini',
+            model='gpt-4.1',
             output_type=str,
             model_settings=ModelSettings(tool_choice='required'),
             tool_use_behavior='stop_on_first_tool',
