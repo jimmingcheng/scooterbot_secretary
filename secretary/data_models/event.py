@@ -16,13 +16,17 @@ class Event(BaseModel):
     location: str | None = None
     recurrence: list[str] | None = None
 
-    def to_gcal_event(self) -> dict[str, Any]:
+    def to_gcal_event(self, calendar_tz: str | None = None) -> dict[str, Any]:
         event: dict[str, Any] = {
             'summary': self.summary,
         }
 
         event['start'] = {'dateTime': self.start} if 'T' in self.start else {'date': self.start}
         event['end'] = {'dateTime': self.end} if 'T' in self.end else {'date': self.end}
+
+        if calendar_tz:
+            event['start']['timeZone'] = calendar_tz
+            event['end']['timeZone'] = calendar_tz
 
         if self.description:
             event['description'] = self.description

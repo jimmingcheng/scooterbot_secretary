@@ -228,6 +228,7 @@ async def create_event(
     - if start is provided and end is not, assume 1 hour duration
     """
     calsvc = get_calendar_service(cast(UserContext, ctx.context).user_id)
+    tz = calsvc.settings().get(setting='timezone').execute().get('value')
 
     if location:
         gmaps = googlemaps.Client(key=cfg().google_apis.api_key)
@@ -255,7 +256,7 @@ async def create_event(
 
     calsvc.events().insert(
         calendarId=calendar_id,
-        body=event.to_gcal_event(),
+        body=event.to_gcal_event(calendar_tz=tz),
     ).execute()
 
     return 'Successfully created event'
@@ -278,6 +279,7 @@ async def update_event(
     start, end: format should be RFC3339 (YYYY-MM-DDTHH:mm:ssZZ)
     """
     calsvc = get_calendar_service(cast(UserContext, ctx.context).user_id)
+    tz = calsvc.settings().get(setting='timezone').execute().get('value')
 
     event = Event.get(calsvc, calendar_id, event_id)
 
@@ -312,7 +314,7 @@ async def update_event(
     calsvc.events().patch(
         calendarId=calendar_id,
         eventId=event_id,
-        body=event.to_gcal_event(),
+        body=event.to_gcal_event(calendar_tz=tz),
     ).execute()
 
     return 'Successfully updated event'
